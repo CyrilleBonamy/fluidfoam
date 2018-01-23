@@ -344,7 +344,7 @@ class OpenFoamFile(object):
                 '{}i'.format(nb_numbers),
                 data[0:nb_numbers*struct.calcsize('i')])
             data = self.content.split(
-                    str.encode(str(self.pointsbyface[-1])))[1]
+                str.encode(str(self.pointsbyface[-1])))[1]
             data = b'\n('.join(data.split(b'\n(')[1:])
 
             for i in range(self.nfaces):
@@ -365,7 +365,7 @@ class OpenFoamFile(object):
                     self.faces[i-1] = {}
                     self.faces[i-1]['npts'] = line.split(b'(')[0]
                     self.faces[i-1]['id_pts'] = [int(s) for s in ((
-                            line.split(b'(')[1].split(b')')[0]).split())]
+                        line.split(b'(')[1].split(b')')[0]).split())]
 
     def _parse_points(self):
 
@@ -458,7 +458,7 @@ def readfield(path, time_name=None, name=None, shape=None, boundary=None):
         time_name: str\n
         name: str\n
         shape: None or iterable\n
-        boundary: None or str 
+        boundary: None or str
 
     Returns:
         array: array of type of the field; size of the array is the size of the
@@ -507,7 +507,7 @@ def readscalar(path, time_name=None, name=None, shape=None, boundary=None):
         time_name: str\n
         name: str\n
         shape: None or iterable\n
-        boundary: None or str 
+        boundary: None or str
 
     Returns:
         array: array of scalar field; size of the array is the size of the
@@ -540,7 +540,7 @@ def readvector(path, time_name=None, name=None, shape=None, boundary=None):
         time_name: str\n
         name: str\n
         shape: None or iterable\n
-        boundary: None or str 
+        boundary: None or str
 
     Returns:
         array: array of vector field; size of the array is the size of the
@@ -570,15 +570,15 @@ def readvector(path, time_name=None, name=None, shape=None, boundary=None):
 def readsymmtensor(path, time_name=None, name=None, shape=None,
                    boundary=None):
     """
-    Read OpenFoam symmetrical tensor field and reshape if necessary and possible
-    (not uniform field).
+    Read OpenFoam symmetrical tensor field and reshape if necessary and
+    possible (not uniform field).
 
     Args:
         path: str\n
         time_name: str\n
         name: str\n
         shape: None or iterable\n
-        boundary: None or str 
+        boundary: None or str
 
     Returns:
         array: array of symmetrical tensor field; size of the array is the size
@@ -619,7 +619,7 @@ def readtensor(path, time_name=None, name=None, shape=None, boundary=None):
         time_name: str\n
         name: str\n
         shape: None or iterable\n
-        boundary: None or str 
+        boundary: None or str
 
     Returns:
         array: array of tensor field; size of the array is the size of the
@@ -654,7 +654,7 @@ def readmesh(rep, shape=None, boundary=None):
     Args:
         rep: str\n
         shape: None or iterable\n
-        boundary: None or str 
+        boundary: None or str
 
     Returns:
         array: array of vector (Mesh X, Y, Z); size of the array is the size of
