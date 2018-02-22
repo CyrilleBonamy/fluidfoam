@@ -331,7 +331,7 @@ class OpenFoamFile(object):
             self.nfaces = int(line)-1
         else:
             self.nfaces = int(line)
-        data = self.content.split(line)[1]
+        data = self.content.split(line, 1)[1]
         data = b'\n('.join(data.split(b'\n(')[1:])
 
         lines = data.split(b'\n')
@@ -377,7 +377,7 @@ class OpenFoamFile(object):
                 continue
             break
         self.nb_pts = int(line)
-        data = self.content.split(line)[1]
+        data = self.content.split(line, 1)[1]
 
         self.type_data = self.header[b'class']
 
@@ -406,7 +406,7 @@ class OpenFoamFile(object):
                 continue
             break
         self.nb_faces = int(line)
-        data = self.content.split(line)[2]
+        data = self.content.split(line, 2)[2]
 
         self.type_data = self.header[b'class']
 
