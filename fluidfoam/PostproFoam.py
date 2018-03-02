@@ -132,9 +132,9 @@ class Forcesfile(object):
                         ,'Mvx','Mvy','Mvz','Mpox','Mpoy','Mpoz']
 
         """
-        f=open(os.path.join(self.dir,'forces.dat'),'r')
-        data = f.read()
-        f.close()
+        with open(os.path.join(self.dir,'forces.dat'),'r') as f:
+            data = f.read()
+        
   
         tab = self._parse_forces(data)
         self.N_timestep = tab.shape[0]
