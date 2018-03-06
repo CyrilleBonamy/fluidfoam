@@ -215,7 +215,7 @@ class OpenFoamFile(object):
                     [float(s)
                      for s in data.strip().split(b'\n')[:nb_pts]])
             elif self.type_data in ('vector', 'tensor', 'symmtensor'):
-                lines = data.split(b'\n(')
+                lines = data.split(b';')[0].split(b'\n(')
                 lines = [line.split(b')')[0] for line in lines]
                 data = b' '.join(lines).strip()
                 self.values = np.array([float(s) for s in data.split()])
