@@ -13,7 +13,7 @@ fluidfoam
    :alt: Documentation status
 
 .. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/ipwdnr1an8su429q?svg=true
-   _AppVeyor: https://ci.appveyor.com/project/CyrilleBonamy/fluidfoam/history
+.. _AppVeyor: https://ci.appveyor.com/project/CyrilleBonamy/fluidfoam/history
 
 .. |coverage| image:: https://codecov.io/bb/sedfoam/fluidfoam/branch/default/graph/badge.svg
    :target: https://codecov.io/bb/sedfoam/fluidfoam/branch/default/
