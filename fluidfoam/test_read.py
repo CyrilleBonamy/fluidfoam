@@ -5,7 +5,7 @@ import unittest
 import fluidfoam
 
 sols = ['output_samples/ascii/', 'output_samples/bin/',
-       'output_samples/bingz/', 'output_samples/asciigz/']
+        'output_samples/bingz/', 'output_samples/asciigz/']
 timename = '0'
 
 # round error (differences bin and ascii)
@@ -18,6 +18,7 @@ u_samples = {(0, 0): -9.16739310e-01, (1, 0): 1.08239e-01,
              (2, 9): 1.02557, (2, 48): 8.95483e-01}
 size = 64
 
+
 class SimpleTestCase(unittest.TestCase):
 
     def _test_functions(self, readscalar, readsymmtensor, readtensor,
@@ -29,10 +30,11 @@ class SimpleTestCase(unittest.TestCase):
             alpha = readscalar(sol, timename, 'alpha')
             sigma = readsymmtensor(sol, timename, 'sigma')
             sigmauniform = readsymmtensor(sol, timename, 'sigmauniform')
-            sigmauniform = readsymmtensor(sol, timename, 'sigmauniform', (2, size//2))
+            sigmauniform = readsymmtensor(sol, timename, 'sigmauniform',
+                                          (2, size//2))
             print(sigmauniform)
             taus = readtensor(sol, timename, 'Taus')
-            taustop = readtensor(sol, timename, 'Taus', boundary='top')
+            readtensor(sol, timename, 'Taus', boundary='top')
             u2 = readvector(sol, timename, 'U', (2, size//2))
             u1 = readarray(sol, timename, 'U')
             u = readvector(sol, timename, 'U')
@@ -58,12 +60,12 @@ class SimpleTestCase(unittest.TestCase):
                                 '0', 'alpha10', (2, 10//2))
         alphashort1 = readscalar('output_samples/ascii/', '0', 'alpha10')
         alphauniform = readscalar('output_samples/ascii/', '0', 'alphauniform')
-        Uuniform = readvector('output_samples/ascii/', '0', 'Uuniform')
+        readvector('output_samples/ascii/', '0', 'Uuniform')
         alphauniform = readscalar('output_samples/bin/', '0', 'alphauniform')
-        x, y, z = readmesh('output_samples/ascii/', boundary = 'bottom')
-        x, y, z = readmesh('output_samples/bin/', boundary = 'bottom')
+        x, y, z = readmesh('output_samples/ascii/', boundary='bottom')
+        x, y, z = readmesh('output_samples/bin/', boundary='bottom')
         x, y, z = readmesh('output_samples/bin/3d/')
-        x, y, z = readmesh('output_samples/bin/3d/', boundary = 'bottom')
+        x, y, z = readmesh('output_samples/bin/3d/', boundary='bottom')
         self.assertEqual(10, alphashort.size)
         self.assertEqual(10, len(alphashort1))
         self.assertEqual(1, len(alphauniform))

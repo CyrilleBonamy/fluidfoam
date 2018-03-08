@@ -4,7 +4,7 @@ import matplotlib
 matplotlib.use('Agg')
 
 sols = ['output_samples/ascii/', 'output_samples/bin/',
-       'output_samples/bingz/', 'output_samples/asciigz/']
+        'output_samples/bingz/', 'output_samples/asciigz/']
 timename = '0'
 
 size = 64
