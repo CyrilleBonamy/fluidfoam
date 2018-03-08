@@ -32,7 +32,6 @@ class SimpleTestCase(unittest.TestCase):
             sigmauniform = readsymmtensor(sol, timename, 'sigmauniform')
             sigmauniform = readsymmtensor(sol, timename, 'sigmauniform',
                                           (2, size//2))
-            print(sigmauniform)
             taus = readtensor(sol, timename, 'Taus')
             readtensor(sol, timename, 'Taus', boundary='top')
             u2 = readvector(sol, timename, 'U', (2, size//2))

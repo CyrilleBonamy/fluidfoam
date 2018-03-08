@@ -12,6 +12,9 @@ fluidfoam
    :target: http://fluidfoam.readthedocs.org
    :alt: Documentation status
 
+.. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/ipwdnr1an8su429q?svg=true
+.. _AppVeyor: https://ci.appveyor.com/project/CyrilleBonamy/fluidfoam/history
+
 .. |coverage| image:: https://codecov.io/bb/sedfoam/fluidfoam/branch/default/graph/badge.svg
    :target: https://codecov.io/bb/sedfoam/fluidfoam/branch/default/
    :alt: Code coverage
@@ -24,7 +27,7 @@ What is this repository for?
 * Openfoam Tools
 * Version : 0.1.1
 * Supported OpenFoam Versions : 2.4.0, 4.1, 5.0, v1712 plus
-* Supported Python Versions : 2.7.x, 3.5
+* Supported Python Versions : 2.7.x, >= 3.4
 
 Deployment instructions
 -------
