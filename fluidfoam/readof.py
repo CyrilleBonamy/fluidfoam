@@ -703,10 +703,9 @@ def readmesh(rep, shape=None, boundary=None):
                 face[owner.values[i]] = list()
             face[owner.values[i]].append(facefile.faces[i]['id_pts'][:])
         for i in range(owner.nb_cell):
-            xs[i] = np.mean(pointfile.values_x[np.concatenate(face[i])[:]])
-            ys[i] = np.mean(pointfile.values_y[np.concatenate(face[i])[:]])
-            zs[i] = np.mean(pointfile.values_z[np.concatenate(face[i])[:]])
-
+            xs[i] = np.mean(pointfile.values_x[np.unique(np.concatenate(face[i])[:])])
+            ys[i] = np.mean(pointfile.values_y[np.unique(np.concatenate(face[i])[:])])
+            zs[i] = np.mean(pointfile.values_z[np.unique(np.concatenate(face[i])[:])])
         if shape is not None:
             xs = np.reshape(xs, shape, order="F")
             ys = np.reshape(ys, shape, order="F")
