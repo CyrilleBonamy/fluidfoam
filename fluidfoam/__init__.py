@@ -6,7 +6,7 @@ from fluidfoam.readof import readsymmtensor, readfield, readmesh
 from fluidfoam.readof import typefield
 from fluidfoam.create1dprofile import create1dprofil, read1dprofil
 from fluidfoam.create1dprofile import plot1dprofil
-from fluidfoam.PostproFoam import PostProFoamFile
+from fluidfoam.readpostpro import readforce
 
 from fluidfoam._version import __version__
 
