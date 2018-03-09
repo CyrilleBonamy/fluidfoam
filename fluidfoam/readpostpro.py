@@ -51,7 +51,6 @@ def readforce(path, namepatch='forces', time_name='0', name='forces'):
             line = line.replace(b'(', b'')
             line = line.replace(b')', b'')
             line = line.split()
-            print(len(data), j)
             tab = np.zeros([len(data)-j-1, len(line)], dtype=float)
             j = 0
             tab[j, :] = np.array(line, dtype=float)

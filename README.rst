@@ -88,13 +88,13 @@ Contacts
 * Cyrille.Bonamy@legi.cnrs.fr
 * Julien.Chauchat@grenoble-inp.fr
 * Pierre.Augier@legi.cnrs.fr
+* Guillaume.Maurice@univ-grenoble-alpes.fr
 * Tim.Nagel@legi.cnrs.fr
 * Thibaud.Revil-Baudard@legi.cnrs.fr
 
 License
 -------
 
-fluidfoam is distributed under the CeCILL-B_ License, a BSD compatible
-french license.
+fluidfoam is distributed under the GNU General Public License v2 (GPLv2).
 
-.. _CeCILL-B: http://www.cecill.info/index.en.html
+.. _GPLv2: https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
