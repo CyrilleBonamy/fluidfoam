@@ -448,7 +448,8 @@ def typefield(path, time_name=None, name=None):
     return field.type_data
 
 
-def readfield(path, time_name=None, name=None, shape=None, boundary=None):
+def readfield(path, time_name=None, name=None, shape=None, boundary=None,
+              order="F"):
     """
     Read OpenFoam field and reshape if necessary and possible (not uniform
     field).
@@ -458,7 +459,8 @@ def readfield(path, time_name=None, name=None, shape=None, boundary=None):
         time_name: str\n
         name: str\n
         shape: None or iterable\n
-        boundary: None or str
+        boundary: None or str\n
+        order: "F" (default) or "C"
 
     Returns:
         array: array of type of the field; size of the array is the size of the
@@ -474,30 +476,31 @@ def readfield(path, time_name=None, name=None, shape=None, boundary=None):
 
     if field.type_data == 'scalar':
         if shape is not None or field.uniform:
-            values = np.reshape(values, shape, order="F")
+            values = np.reshape(values, shape, order=order)
     elif field.type_data == 'vector':
         if shape is None or field.uniform:
             shape = (3, values.size//3)
         else:
             shape = (3,) + tuple(shape)
-        values = np.reshape(values, shape, order="F")
+        values = np.reshape(values, shape, order=order)
     elif field.type_data == 'symmtensor':
         if shape is None or field.uniform:
             shape = (6, values.size//6)
         else:
             shape = (6,) + tuple(shape)
-        values = np.reshape(values, shape, order="F")
+        values = np.reshape(values, shape, order=order)
     elif field.type_data == 'tensor':
         if shape is None or field.uniform:
             shape = (9, values.size//9)
         else:
             shape = (9,) + tuple(shape)
-        values = np.reshape(values, shape, order="F")
+        values = np.reshape(values, shape, order=order)
 
     return values
 
 
-def readscalar(path, time_name=None, name=None, shape=None, boundary=None):
+def readscalar(path, time_name=None, name=None, shape=None, boundary=None,
+               order="F"):
     """
     Read OpenFoam scalar field and reshape if necessary and possible (not
     uniform field).
@@ -507,7 +510,8 @@ def readscalar(path, time_name=None, name=None, shape=None, boundary=None):
         time_name: str\n
         name: str\n
         shape: None or iterable\n
-        boundary: None or str
+        boundary: None or str\n
+        order: "F" (default) or "C"
 
     Returns:
         array: array of scalar field; size of the array is the size of the
@@ -525,12 +529,13 @@ def readscalar(path, time_name=None, name=None, shape=None, boundary=None):
         raise ValueError('This file does not contain a scalar.')
 
     if shape is not None:
-        values = np.reshape(values, shape, order="F")
+        values = np.reshape(values, shape, order=order)
 
     return values
 
 
-def readvector(path, time_name=None, name=None, shape=None, boundary=None):
+def readvector(path, time_name=None, name=None, shape=None, boundary=None,
+               order="F"):
     """
     Read OpenFoam vector field and reshape if necessary and possible (not
     uniform field).
@@ -540,7 +545,8 @@ def readvector(path, time_name=None, name=None, shape=None, boundary=None):
         time_name: str\n
         name: str\n
         shape: None or iterable\n
-        boundary: None or str
+        boundary: None or str\n
+        order: "F" (default) or "C"
 
     Returns:
         array: array of vector field; size of the array is the size of the
@@ -562,13 +568,13 @@ def readvector(path, time_name=None, name=None, shape=None, boundary=None):
     else:
         shape = (3,) + tuple(shape)
 
-    values = np.reshape(values, shape, order="F")
+    values = np.reshape(values, shape, order=order)
 
     return values
 
 
 def readsymmtensor(path, time_name=None, name=None, shape=None,
-                   boundary=None):
+                   boundary=None, order="F"):
     """
     Read OpenFoam symmetrical tensor field and reshape if necessary and
     possible (not uniform field).
@@ -578,7 +584,8 @@ def readsymmtensor(path, time_name=None, name=None, shape=None,
         time_name: str\n
         name: str\n
         shape: None or iterable\n
-        boundary: None or str
+        boundary: None or str\n
+        order: "F" (default) or "C"
 
     Returns:
         array: array of symmetrical tensor field; size of the array is the size
@@ -604,12 +611,13 @@ def readsymmtensor(path, time_name=None, name=None, shape=None,
         else:
             shape = (6,) + tuple(shape)
 
-    values = np.reshape(values, shape, order="F")
+    values = np.reshape(values, shape, order=order)
 
     return values
 
 
-def readtensor(path, time_name=None, name=None, shape=None, boundary=None):
+def readtensor(path, time_name=None, name=None, shape=None, boundary=None,
+               order="F"):
     """
     Read OpenFoam tensor field and reshape if necessary and possible
     (not uniform field).
@@ -619,7 +627,8 @@ def readtensor(path, time_name=None, name=None, shape=None, boundary=None):
         time_name: str\n
         name: str\n
         shape: None or iterable\n
-        boundary: None or str
+        boundary: None or str\n
+        order: "F" (default) or "C"
 
     Returns:
         array: array of tensor field; size of the array is the size of the
@@ -642,19 +651,20 @@ def readtensor(path, time_name=None, name=None, shape=None, boundary=None):
     else:
         shape = (9,) + tuple(shape)
 
-    values = np.reshape(values, shape, order="F")
+    values = np.reshape(values, shape, order=order)
 
     return values
 
 
-def readmesh(rep, shape=None, boundary=None):
+def readmesh(rep, shape=None, boundary=None, order="F"):
     """
     Read OpenFoam mesh and reshape if necessary (in cartesian structured mesh).
 
     Args:
         rep: str\n
         shape: None or iterable\n
-        boundary: None or str
+        boundary: None or str\n
+        order: "F" (default) or "C"
 
     Returns:
         array: array of vector (Mesh X, Y, Z); size of the array is the size of
@@ -715,9 +725,9 @@ def readmesh(rep, shape=None, boundary=None):
             zs[i] = np.mean(
                     pointfile.values_z[np.unique(np.concatenate(face[i])[:])])
         if shape is not None:
-            xs = np.reshape(xs, shape, order="F")
-            ys = np.reshape(ys, shape, order="F")
-            zs = np.reshape(zs, shape, order="F")
+            xs = np.reshape(xs, shape, order=order)
+            ys = np.reshape(ys, shape, order=order)
+            zs = np.reshape(zs, shape, order=order)
 
     return xs, ys, zs
 
