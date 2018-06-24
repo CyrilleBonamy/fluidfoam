@@ -16,7 +16,7 @@ import numpy as np
 from fluidfoam.readof import typefield, readmesh, readfield
 
 
-def create1dprofil(pathr, pathw, timename, varlist):
+def create1dprofil(pathr, pathw, timename, axis ,varlist):
     """
     This function provides way to read 1D profiles at time timename of pathr
     and write them in OpenFoam Format in the 1d_profil folder of pathw
@@ -26,13 +26,14 @@ def create1dprofil(pathr, pathw, timename, varlist):
         pathr: str\n
         pathw: str\n
         timename: str\n
+        axis: str\n
         varlist: list of str\n
 
     Returns:
         status: 'create 1D profiles: done' if ok
 
     A way you might use me is:\n
-        status = fluidfoam.create1dprofil("path_of_case", "pathw", time,
+        status = fluidfoam.create1dprofil("path_of_case", "pathw", time, 'Y',
         ['Ua', 'Ub'])
     Please note that the 1d_profil directory must be existing in the pathw
     directory
@@ -48,6 +49,15 @@ def create1dprofil(pathr, pathw, timename, varlist):
     for var in varlist:
         field = readfield(pathr, timename, var)
         typevar = typefield(pathr, timename, var)
+        
+        if axis=='X':
+            waxis=X
+        elif axis=='Y':
+            waxis=Y
+        elif axis=='Z':
+            waxis=Z
+        else:
+            print('axis does not exist, please check input parameters\n')
 
         filename = ''+var
 
@@ -56,7 +66,7 @@ def create1dprofil(pathr, pathw, timename, varlist):
             f = open(filename1, "w")
             f.write('(\n')
             for cell in range(size1d):
-                f.write('('+str(Y[cell])+' '+str(field[cell])+')\n')
+                f.write('('+str(waxis[cell])+' '+str(field[cell])+')\n')
 #            np.savetxt(f, np.c_[Y, field], fmt="(%s %s)")
             f.write(')\n')
             f.close()
@@ -66,13 +76,13 @@ def create1dprofil(pathr, pathw, timename, varlist):
                 f = open(filename1, "w")
                 f.write('(\n')
                 for cell in range(size1d):
-                    f.write('('+str(Y[cell])+' '+str(field[i, cell])+')\n')
+                    f.write('('+str(waxis[cell])+' '+str(field[i, cell])+')\n')
                 f.write(')\n')
                 f.close()
             print('Warning for pyof users : Ua=Ua0, Va=Ua2, Wa=Ua1\n')
         else:
             print('PROBLEM with varlist input: Good input is for example :')
-            print('fluidfoam.create1dprofile("/data/1dcompute/", "/data/1dcompute/", "750", [\'omega\',\'p\'])\n')
+            print('fluidfoam.create1dprofile("/data/1dcompute/", "/data/1dcompute/", "750", "Y",[\'omega\',\'p\'])\n')
     status = 'create 1D profiles: done'
     return status
 
