@@ -90,7 +90,6 @@ Contacts
 * Pierre.Augier@legi.cnrs.fr
 * Guillaume.Maurice@univ-grenoble-alpes.fr
 * Tim.Nagel@legi.cnrs.fr
-* Thibaud.Revil-Baudard@legi.cnrs.fr
 
 License
 -------
