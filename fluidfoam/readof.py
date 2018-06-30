@@ -79,7 +79,7 @@ class OpenFoamFile(object):
             self._parse_face()
         elif name is 'points':
             self._parse_points()
-        elif name is 'owner':
+        elif (name is 'owner') or (name is 'neighbour'):
             self._parse_owner()
         else:
             self._parse_data(boundary=boundary)
@@ -709,10 +709,15 @@ def readmesh(rep, shape=None, boundary=None, order="F"):
             zs[i] = np.mean(pointfile.values_z[id_pts[0:npts]])
     else:
         owner = OpenFoamFile(rep + '/constant/polyMesh/', name='owner')
+        neigh = OpenFoamFile(rep + '/constant/polyMesh/', name='neighbour')
         xs = np.empty(owner.nb_cell, dtype=float)
         ys = np.empty(owner.nb_cell, dtype=float)
         zs = np.empty(owner.nb_cell, dtype=float)
         face = {}
+        for i in range(neigh.nb_faces):
+            if not neigh.values[i] in face:
+                face[neigh.values[i]] = list()
+            face[neigh.values[i]].append(facefile.faces[i]['id_pts'][:])
         for i in range(owner.nb_faces):
             if not owner.values[i] in face:
                 face[owner.values[i]] = list()
