@@ -23,6 +23,6 @@ RUN /bin/bash -c "make"
 
 #USER openfoam:openfoam
 # Set the default entry point & arguments
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT ["/bin/bash", "-l", "-c"]
 # CMD        [""]
 
