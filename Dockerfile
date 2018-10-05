@@ -21,8 +21,7 @@ RUN /bin/bash -c "hg clone https://bitbucket.org/sedfoam/fluidfoam"
 WORKDIR /home/openfoam/fluidfoam
 RUN /bin/bash -c "make"
 
-#USER openfoam:openfoam
+USER openfoam:openfoam
 # Set the default entry point & arguments
-#ENTRYPOINT ["/bin/bash", "-l", "-c"]
-# CMD        [""]
+ENTRYPOINT ["/bin/bash"]
 
