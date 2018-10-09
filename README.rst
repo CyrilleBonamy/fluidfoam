@@ -26,7 +26,7 @@ What is this repository for?
 
 * Openfoam Tools
 * Version : 0.1.2
-* Supported OpenFoam Versions : 2.4.0, 4.1, 5.0, v1712 plus
+* Supported OpenFoam Versions : 2.4.0, 4.1, 5.0, 6.0, v1712 plus, v1806 plus
 * Supported Python Versions : 2.7.x, >= 3.4
 
 Deployment instructions
