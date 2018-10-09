@@ -31,7 +31,13 @@ def getgz(h, dz1, N):
                                    np.real(solreal) < 0.9999))
     solgood = solreal[titi]
     # Compute the common ratio of the sequence
-    r = 1. / np.real(np.real(solgood[0]))
+    try:
+        r = 1. / np.real(np.real(solgood[0]))
+    except IndexError:
+        print("dz1 so high compared to the number of cell and the domain size")
+        print("gz would be superior to 1 : NOT IMPLEMENTED")
+        r = 1.
+        gz = 0
     # Compute the grading factor for blockMesh
     gz = r ** (N - 2)
     # Compute the grid points position and the associated spacing
