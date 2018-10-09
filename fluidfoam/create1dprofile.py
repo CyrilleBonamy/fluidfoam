@@ -1,7 +1,6 @@
-"""Write, Read and Plot 1D Profiles in OpenFoam Format for Boundary Conditions
-imposition
-==============================================================================
-
+"""Write, Read and Plot 1D Profiles in OpenFoam Format for Boundary and
+Initial Conditions imposition
+=========================================================================
 .. autofunction:: create1dprofil
 
 .. autofunction:: read1dprofil

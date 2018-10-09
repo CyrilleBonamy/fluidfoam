@@ -1,5 +1,5 @@
-"""Read OpenFoam Files for Python
-===========================================
+"""Read OpenFoam PostProcessing Files for Python
+=======================================================================
 This module provides functions to list and read OpenFoam PostProcessing Files:
 
 .. autofunction:: readforce
@@ -26,15 +26,15 @@ def readforce(path, namepatch='forces', time_name='0', name='forces'):
 
     Returns:
         array: array of force field; size of the array is the size of the
-    time
+        time
 
     A way you might use me is:\n
-    force = readforce('path_of_OpenFoam_case', '0', 'forces')\n
-    It will create and fill the force variables 
-                    ['T','Fpx','Fpy','Fpz','Fvx','Fvy','Fvz'
-                    ,'Fpox','Fpoy','Fpoz','Mpx','Mpy','Mpz'
-                    ,'Mvx','Mvy','Mvz','Mpox','Mpoy','Mpoz']
+        force = readforce('path_of_OpenFoam_case', '0', 'forces')
 
+    It will create and fill the force variables:\n
+        ['T','Fpx','Fpy','Fpz','Fvx','Fvy','Fvz'
+        ,'Fpox','Fpoy','Fpoz','Mpx','Mpy','Mpz'
+        ,'Mvx','Mvy','Mvz','Mpox','Mpoy','Mpoz']
     """
 
     with open(os.path.join(path, 'postProcessing', namepatch, time_name,
@@ -61,3 +61,4 @@ def readforce(path, namepatch='forces', time_name='0', name='forces'):
             line = line.split()
             tab[j, :] = np.array(line, dtype=float)
     return tab
+

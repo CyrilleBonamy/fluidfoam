@@ -89,17 +89,17 @@ french license.
 .. _CeCILL-B: http://www.cecill.info/index.en.html
 
 
-User Guide
-----------
+.. User Guide
+.. ----------
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   overview
-   install
-   tutorial
-   examples
+..   overview
+..   install
+..   tutorial
+..   examples
 
 
 Modules Reference
@@ -114,6 +114,8 @@ functions.
 
    fluidfoam.readof
    fluidfoam.create1dprofile
+   fluidfoam.readpostpro
+   fluidfoam.meshdesign
 
 More
 ----
@@ -134,8 +136,8 @@ More
 .. toctree::
    :maxdepth: 1
 
-   changes
-   to_do
+..   changes
+..   to_do
 
 Indices and tables
 ==================
