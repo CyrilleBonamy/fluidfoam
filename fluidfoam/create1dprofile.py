@@ -1,6 +1,9 @@
-"""Write, Read and Plot 1D Profiles in OpenFoam Format for Boundary and
-Initial Conditions imposition
-=========================================================================
+"""Write, Read and Plot 1D input files for swak4foam
+==========================================================================
+This module allows to read OpenFoam output of one dimensional computation
+and then write, plot and read input files for Boundary and Initial
+Conditions imposition in 3D computation (via swak4foam):
+
 .. autofunction:: create1dprofil
 
 .. autofunction:: read1dprofil
@@ -34,16 +37,13 @@ def create1dprofil(pathr, pathw, timename, axis ,varlist):
     A way you might use me is:\n
         status = fluidfoam.create1dprofil("path_of_case", "pathw", time, 'Y',
         ['Ua', 'Ub'])
+
     Please note that the 1d_profil directory must be existing in the pathw
     directory
     """
 
-#
-#        --------------------Reading part---------------------
-#
     X, Y, Z = readmesh(pathr)
     size1d = Y.shape[0]
-
     filename = ''
     for var in varlist:
         field = readfield(pathr, timename, var)
