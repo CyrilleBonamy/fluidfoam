@@ -500,7 +500,7 @@ def readfield(path, time_name=None, name=None, shape=None, boundary=None,
 
 
 def readscalar(path, time_name=None, name=None, shape=None, boundary=None,
-               order="F"):
+               order="F", mode=None):
     """
     Read OpenFoam scalar field and reshape if necessary and possible (not
     uniform field).
@@ -521,15 +521,17 @@ def readscalar(path, time_name=None, name=None, shape=None, boundary=None,
     A way you might use me is:\n
         scalar_a = fluidfoam.readscalar('path_of_OpenFoam_case', '0', 'alpha')
     """
+    if mode=='parallel':
+        raise ValueError('Not Implemented') 
+    else:
+        scalar = OpenFoamFile(path, time_name, name, boundary=boundary)
+        values = scalar.values
 
-    scalar = OpenFoamFile(path, time_name, name, boundary=boundary)
-    values = scalar.values
+        if scalar.type_data != 'scalar':  # pragma: no cover
+            raise ValueError('This file does not contain a scalar.')
 
-    if scalar.type_data != 'scalar':  # pragma: no cover
-        raise ValueError('This file does not contain a scalar.')
-
-    if shape is not None:
-        values = np.reshape(values, shape, order=order)
+        if shape is not None:
+            values = np.reshape(values, shape, order=order)
 
     return values
 
