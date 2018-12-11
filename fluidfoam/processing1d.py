@@ -64,8 +64,12 @@ def create1dprofil(pathr, pathw, timename, axis ,varlist):
             filename1 = pathw+'/1d_profil/'+filename+'.xy'
             f = open(filename1, "w")
             f.write('(\n')
-            for cell in range(size1d):
-                f.write('('+str(waxis[cell])+' '+str(field[cell])+')\n')
+            if field.shape==(1,):
+                for cell in range(size1d):
+                    f.write('('+str(waxis[cell])+' '+str(field[0])+')\n')
+            else:
+                for cell in range(size1d):
+                    f.write('('+str(waxis[cell])+' '+str(field[cell])+')\n')
 #            np.savetxt(f, np.c_[Y, field], fmt="(%s %s)")
             f.write(')\n')
             f.close()
@@ -74,8 +78,12 @@ def create1dprofil(pathr, pathw, timename, axis ,varlist):
                 filename1 = pathw+'/1d_profil/'+filename+str(i)+'.xy'
                 f = open(filename1, "w")
                 f.write('(\n')
-                for cell in range(size1d):
-                    f.write('('+str(waxis[cell])+' '+str(field[i, cell])+')\n')
+                if field.shape==(3,1):
+                    for cell in range(size1d):
+                        f.write('('+str(waxis[cell])+' '+str(field[i, 0])+')\n')
+                else:
+                    for cell in range(size1d):
+                        f.write('('+str(waxis[cell])+' '+str(field[i, cell])+')\n')
                 f.write(')\n')
                 f.close()
             print('Warning for pyof users : Ua=Ua0, Va=Ua2, Wa=Ua1\n')
