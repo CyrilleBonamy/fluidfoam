@@ -81,7 +81,7 @@ def create1dprofil(pathr, pathw, timename, axis ,varlist):
             print('Warning for pyof users : Ua=Ua0, Va=Ua2, Wa=Ua1\n')
         else:
             print('PROBLEM with varlist input: Good input is for example :')
-            print('fluidfoam.create1dprofile("/data/1dcompute/", "/data/1dcompute/", "750", "Y",[\'omega\',\'p\'])\n')
+            print('fluidfoam.create1dprofil("/data/1dcompute/", "/data/1dcompute/", "750", "Y",[\'omega\',\'p\'])\n')
     status = 'create 1D profiles: done'
     return status
 
