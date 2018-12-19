@@ -24,39 +24,27 @@ class SimpleTestCase(unittest.TestCase):
     def _test_functions(self, readscalar, readsymmtensor, readtensor,
                         readvector, readmesh, readarray):
         for sol in sols:
-            alpha1 = readscalar(sol, timename, 'alpha', (2, size//2))
-            sigma1 = readsymmtensor(sol, timename, 'sigma', (2, size//2))
-            taus1 = readtensor(sol, timename, 'Taus', (2, size//2))
             alpha = readscalar(sol, timename, 'alpha')
             sigma = readsymmtensor(sol, timename, 'sigma')
             sigmauniform = readsymmtensor(sol, timename, 'sigmauniform')
-            sigmauniform = readsymmtensor(sol, timename, 'sigmauniform',
-                                          (2, size//2))
             taus = readtensor(sol, timename, 'Taus')
             readtensor(sol, timename, 'Taus', boundary='top')
-            u2 = readvector(sol, timename, 'U', (2, size//2))
             u1 = readarray(sol, timename, 'U')
+
             u = readvector(sol, timename, 'U')
             x, y, z = readmesh(sol)
             x, y, z = readmesh(sol + timename)
-            xx, yy, zz = readmesh(sol, (2, size//2))
 
             self.assertEqual(size, len(alpha))
-            self.assertEqual(size, alpha1.size)
             self.assertEqual(3*size, u.size)
             self.assertEqual(3*size, u1.size)
-            self.assertEqual(3*size, u2.size)
             self.assertEqual(6*size, sigma.size)
-            self.assertEqual(6*size, sigma1.size)
             self.assertEqual(9*size, taus.size)
-            self.assertEqual(9*size, taus1.size)
 
             for i, v in u_samples.items():
                 self.assertAlmostEqual(u1[i], v, places=places)
             for i, v in alpha_samples.items():
                 self.assertAlmostEqual(v, alpha[i], places=places)
-        alphashort = readscalar('output_samples/ascii/',
-                                '0', 'alpha10', (2, 10//2))
         alphashort1 = readscalar('output_samples/ascii/', '0', 'alpha10')
         alphauniform = readscalar('output_samples/ascii/', '0', 'alphauniform')
         readvector('output_samples/ascii/', '0', 'Uuniform')
@@ -65,7 +53,6 @@ class SimpleTestCase(unittest.TestCase):
         x, y, z = readmesh('output_samples/bin/', boundary='bottom')
         x, y, z = readmesh('output_samples/bin/3d/')
         x, y, z = readmesh('output_samples/bin/3d/', boundary='bottom')
-        self.assertEqual(10, alphashort.size)
         self.assertEqual(10, len(alphashort1))
         self.assertEqual(1, len(alphauniform))
 
