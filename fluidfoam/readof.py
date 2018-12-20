@@ -525,7 +525,7 @@ def readfield(path, time_name=None, name=None, structured=False, boundary=None,
 
 
 def readscalar(path, time_name=None, name=None, structured=False, boundary=None,
-               order="F", mode=None):
+               order="F", precision=15, mode=None):
     """
     Read OpenFoam scalar field and reshape if necessary and possible (not
     uniform field).
@@ -550,7 +550,8 @@ def readscalar(path, time_name=None, name=None, structured=False, boundary=None,
         raise ValueError('Not Implemented')
     else:
         scalar = OpenFoamFile(path, time_name, name, structured=structured,
-                              boundary=boundary, order=order)
+                              boundary=boundary, order=order,
+                              precision=precision)
         values = scalar.values
 
         if scalar.type_data != 'scalar':  # pragma: no cover
@@ -641,7 +642,7 @@ def readsymmtensor(path, time_name=None, name=None, structured=False,
         if scalar.uniform:
             print("internalfield is uniform; so no reshape possible...")
         else:
-            values[0:6, :] = values[0:6, vector.ind]
+            values[0:6, :] = values[0:6, scalar.ind]
             shape = (6,) + tuple(scalar.shape)
             values = np.reshape(values, shape, order = order)
 
@@ -685,7 +686,7 @@ def readtensor(path, time_name=None, name=None, structured=False, boundary=None,
         if scalar.uniform:
             print("internalfield is uniform; so no reshape possible...")
         else:
-            values[0:9, :] = values[0:9, vector.ind]
+            values[0:9, :] = values[0:9, scalar.ind]
             shape = (9,) + tuple(scalar.shape)
             values = np.reshape(values, shape, order = order)
 
