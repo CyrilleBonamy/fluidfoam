@@ -41,7 +41,7 @@ def _make_path(path, time_name=None, name=None):
 class OpenFoamFile(object):
     """OpenFoam file parser."""
     def __init__(self, path, time_name=None, name=None, structured=False,
-                 boundary=None, order="F"):
+                 boundary=None, order="F", precision=15):
 
         self.pathcase = path
         self.path = _make_path(path, time_name, name)
@@ -83,9 +83,9 @@ class OpenFoamFile(object):
         elif (name is 'owner') or (name is 'neighbour'):
             self._parse_owner()
         else:
-            self._parse_data(boundary=boundary)
+            self._parse_data(boundary=boundary, precision=precision)
         if structured:
-            self._determine_order(order=order)
+            self._determine_order(order=order, precision=precision)
 
     def _parse_boundaryfile(self):
 
@@ -148,7 +148,7 @@ class OpenFoamFile(object):
 
         return dict_session
 
-    def _parse_data(self, boundary):
+    def _parse_data(self, boundary, precision=15):
 
         if boundary is not None:
             boun = str.encode(boundary)
@@ -223,7 +223,7 @@ class OpenFoamFile(object):
                 data = b' '.join(lines).strip()
                 self.values = np.array([float(s) for s in data.split()])
 
-        self.values = np.around(self.values, decimals=15)
+        self.values = np.around(self.values, decimals=precision)
         if self.type_data == 'vector':
             self.values_x = self.values[::3]
             self.values_y = self.values[1::3]
@@ -430,16 +430,16 @@ class OpenFoamFile(object):
             self.values = np.array([int(s) for s in data.split()])
         self.nb_cell = np.max(self.values) + 1
 
-    def _determine_order(self, order):
+    def _determine_order(self, order, precision):
 
-        xs, ys, zs = readmesh(self.pathcase)
+        xs, ys, zs = readmesh(self.pathcase, precision=precision)
         nb_cell = xs.size
         nx = np.unique(xs).size
         ny = np.unique(ys).size
         nz = np.unique(zs).size
         if nx*ny*nz != nb_cell:
-            raise ValueError('nx.ny.nz not equal to number of cells. Do '
-                             'you are sure that your mesh is cartesian?')
+            raise ValueError('nx.ny.nz not equal to number of cells.'
+                             'Are you sure that your mesh is cartesian?')
 
         self.ind = np.lexsort((xs, ys, zs))
         self.shape = (nx, ny, nz)
@@ -470,7 +470,7 @@ def typefield(path, time_name=None, name=None):
 
 
 def readfield(path, time_name=None, name=None, structured=False, boundary=None,
-              order="F"):
+              order="F", precision=15):
     """
     Read OpenFoam field and reshape if necessary (structured mesh) and
     possible (not uniform field).
@@ -493,7 +493,7 @@ def readfield(path, time_name=None, name=None, structured=False, boundary=None,
     """
 
     field = OpenFoamFile(path, time_name, name, structured=structured,
-                         boundary=boundary, order=order)
+                         boundary=boundary, order=order, precision=precision)
     values = field.values
 
     if field.type_data == 'scalar':
@@ -563,7 +563,7 @@ def readscalar(path, time_name=None, name=None, structured=False, boundary=None,
 
 
 def readvector(path, time_name=None, name=None, structured=False, boundary=None,
-               order="F"):
+               order="F", precision=15):
     """
     Read OpenFoam vector field and reshape if necessary and possible (not
     uniform field).
@@ -586,7 +586,7 @@ def readvector(path, time_name=None, name=None, structured=False, boundary=None,
     """
 
     vector = OpenFoamFile(path, time_name, name, structured=structured,
-                          boundary=boundary, order=order)
+                          boundary=boundary, order=order, precision=precision)
     values = vector.values
 
     if vector.type_data != 'vector':  # pragma: no cover
@@ -606,7 +606,7 @@ def readvector(path, time_name=None, name=None, structured=False, boundary=None,
 
 
 def readsymmtensor(path, time_name=None, name=None, structured=False,
-                   boundary=None, order="F"):
+                   boundary=None, order="F", precision=15):
     """
     Read OpenFoam symmetrical tensor field and reshape if necessary and
     possible (not uniform field).
@@ -629,29 +629,27 @@ def readsymmtensor(path, time_name=None, name=None, structured=False,
     """
 
     scalar = OpenFoamFile(path, time_name, name, structured=structured,
-                          boundary=boundary, order=order)
+                          boundary=boundary, order=order, precision=precision)
     values = scalar.values
 
     if scalar.type_data != 'symmtensor':  # pragma: no cover
         raise ValueError('This file does not contain a symmtensor.')
 
+    shape = (6, values.size//6)
+    values = np.reshape(values, shape, order = order)
     if structured:
         if scalar.uniform:
             print("internalfield is uniform; so no reshape possible...")
-            shape = (6, values.size//6)
         else:
-            values = values[scalar.ind]
+            values[0:6, :] = values[0:6, vector.ind]
             shape = (6,) + tuple(scalar.shape)
-    else:
-        shape = (6, values.size//6)
-
-    values = np.reshape(values, shape, order = order)
+            values = np.reshape(values, shape, order = order)
 
     return values
 
 
 def readtensor(path, time_name=None, name=None, structured=False, boundary=None,
-               order="F"):
+               order="F", precision=15):
     """
     Read OpenFoam tensor field and reshape if necessary and possible
     (not uniform field).
@@ -674,29 +672,27 @@ def readtensor(path, time_name=None, name=None, structured=False, boundary=None,
     """
 
     scalar = OpenFoamFile(path, time_name, name, structured=structured,
-                          boundary=boundary, order=order)
+                          boundary=boundary, order=order, precision=precision)
 
     values = scalar.values
 
     if scalar.type_data != 'tensor':  # pragma: no cover
         raise ValueError('This file does not contstartFaceain a tensor.')
 
+    shape = (9, values.size//9)
+    values = np.reshape(values, shape, order = order)
     if structured:
         if scalar.uniform:
             print("internalfield is uniform; so no reshape possible...")
-            shape = (9, values.size//9)
         else:
-            values = values[scalar.ind]
+            values[0:9, :] = values[0:9, vector.ind]
             shape = (9,) + tuple(scalar.shape)
-    else:
-        shape = (9, values.size//9)
-
-    values = np.reshape(values, shape, order = order)
+            values = np.reshape(values, shape, order = order)
 
     return values
 
 
-def readmesh(rep, structured=False, boundary=None, order="F"):
+def readmesh(rep, structured=False, boundary=None, order="F", precision=15):
     """
     Read OpenFoam mesh and reshape if necessary (in cartesian structured mesh).
 
@@ -750,7 +746,7 @@ def readmesh(rep, structured=False, boundary=None, order="F"):
     else:
         owner = OpenFoamFile(rep + '/constant/polyMesh/', name='owner')
         if os.path.exists(os.path.join(rep, 'constant/C')):
-            xs, ys, zs = readvector(rep, 'constant', 'C')
+            xs, ys, zs = readvector(rep, 'constant', 'C', precision=precision)
         else:
             facefile = OpenFoamFile(rep + '/constant/polyMesh/', name='faces')
             pointfile = OpenFoamFile(rep + '/constant/polyMesh/', name='points')
@@ -782,8 +778,8 @@ def readmesh(rep, structured=False, boundary=None, order="F"):
             ny = np.unique(ys).size
             nz = np.unique(zs).size
             if nx*ny*nz != owner.nb_cell:
-                raise ValueError('nx.ny.nz not equal to number of cells. Do '
-                                 'you are sure that your mesh is cartesian?')
+                raise ValueError('nx.ny.nz not equal to number of cells.'
+                                 'Are you sure that your mesh is cartesian?')
             ind = np.lexsort((xs, ys, zs))
             shape = (nx, ny, nz)
             xs = xs[ind].reshape(shape, order = order)
