@@ -79,7 +79,7 @@ class OpenFoamFile(object):
         elif name is 'faces':
             self._parse_face()
         elif name is 'points':
-            self._parse_points()
+            self._parse_points(precision=precision)
         elif (name is 'owner') or (name is 'neighbour'):
             self._parse_owner()
         else:
@@ -157,7 +157,7 @@ class OpenFoamFile(object):
             else:
                 print('Warning : No data on patch')
                 print('Nearest cells values use')
-                self._nearest_data(boundary=boundary)
+                self._nearest_data(boundary=boundary, precision=precision)
                 return
         else:
             data = self.content.split(b'internalField')[1]
@@ -229,7 +229,7 @@ class OpenFoamFile(object):
             self.values_y = self.values[1::3]
             self.values_z = self.values[2::3]
 
-    def _nearest_data(self, boundary):
+    def _nearest_data(self, boundary, precision):
 
         bounfile = OpenFoamFile(self.pathcase + '/constant/polyMesh/',
                                 name='boundary')
@@ -302,7 +302,7 @@ class OpenFoamFile(object):
                 lines = [line.split(b')')[0] for line in lines]
                 data = b' '.join(lines).strip()
                 values = np.array([float(s) for s in data.split()])
-        values = np.around(values, decimals=15)
+        values = np.around(values, decimals=precision)
         if self.uniform:
             self.values = values
         else:
@@ -372,7 +372,7 @@ class OpenFoamFile(object):
                     self.faces[i-1]['id_pts'] = [int(s) for s in ((
                         line.split(b'(')[1].split(b')')[0]).split())]
 
-    def _parse_points(self):
+    def _parse_points(self, precision):
 
         for line in self.lines_stripped:
             try:
@@ -398,7 +398,7 @@ class OpenFoamFile(object):
             data = b' '.join(lines).strip()
             self.values = np.array([float(s) for s in data.split()])
 
-        self.values = np.around(self.values, decimals=15)
+        self.values = np.around(self.values, decimals=precision)
         self.values_x = self.values[::3]
         self.values_y = self.values[1::3]
         self.values_z = self.values[2::3]
@@ -481,7 +481,10 @@ def readfield(path, time_name=None, name=None, structured=False, boundary=None,
         name: str\n
         structured: False or True\n
         boundary: None or str\n
-        order: "F" (default) or "C"
+        order: "F" (default) or "C" \n
+        precision : Number of decimal places to round to (default: 15).
+        If decimals is negative, it specifies the number of positions to the
+        left of the decimal point.
 
     Returns:
         array: array of type of the field; size of the array is the size of the
@@ -500,32 +503,32 @@ def readfield(path, time_name=None, name=None, structured=False, boundary=None,
         if structured and not field.uniform:
             values = np.reshape(values[field.ind], field.shape, order = order)
     elif field.type_data == 'vector':
-        if not structured or field.uniform:
-            shape = (3, values.size//3)
-        else:
-            values = values[field.ind]
+        shape = (3, values.size//3)
+        values = np.reshape(values, shape, order = order)
+        if structured and not field.uniform:
+            values[0:3, :] = values[0:3, field.ind]
             shape = (3,) + tuple(field.shape)
-        values = np.reshape(values, shape, order = order)
+            values = np.reshape(values, shape, order = order)
     elif field.type_data == 'symmtensor':
-        if not structured or field.uniform:
-            shape = (6, values.size//6)
-        else:
-            values = values[field.ind]
+        shape = (6, values.size//6)
+        values = np.reshape(values, shape, order = order)
+        if structured and not field.uniform:
+            values[0:6, :] = values[0:6, field.ind]
             shape = (6,) + tuple(field.shape)
-        values = np.reshape(values, shape, order = order)
+            values = np.reshape(values, shape, order = order)
     elif field.type_data == 'tensor':
-        if not structured or field.uniform:
-            shape = (9, values.size//9)
-        else:
-            values = values[field.ind]
-            shape = (9,) + tuple(field.shape)
+        shape = (9, values.size//9)
         values = np.reshape(values, shape, order = order)
+        if structured and not field.uniform:
+            values[0:9, :] = values[0:9, field.ind]
+            shape = (9,) + tuple(field.shape)
+            values = np.reshape(values, shape, order = order)
 
     return values
 
 
 def readscalar(path, time_name=None, name=None, structured=False, boundary=None,
-               order="F", mode=None):
+               order="F", precision=15, mode=None):
     """
     Read OpenFoam scalar field and reshape if necessary and possible (not
     uniform field).
@@ -536,7 +539,10 @@ def readscalar(path, time_name=None, name=None, structured=False, boundary=None,
         name: str\n
         structured: False or True\n
         boundary: None or str\n
-        order: "F" (default) or "C"
+        order: "F" (default) or "C" \n
+        precision : Number of decimal places to round to (default: 15).
+        If decimals is negative, it specifies the number of positions to the
+        left of the decimal point.
 
     Returns:
         array: array of scalar field; size of the array is the size of the
@@ -550,7 +556,8 @@ def readscalar(path, time_name=None, name=None, structured=False, boundary=None,
         raise ValueError('Not Implemented')
     else:
         scalar = OpenFoamFile(path, time_name, name, structured=structured,
-                              boundary=boundary, order=order)
+                              boundary=boundary, order=order,
+                              precision=precision)
         values = scalar.values
 
         if scalar.type_data != 'scalar':  # pragma: no cover
@@ -574,7 +581,10 @@ def readvector(path, time_name=None, name=None, structured=False, boundary=None,
         name: str\n
         structured: False or True\n
         boundary: None or str\n
-        order: "F" (default) or "C"
+        order: "F" (default) or "C" \n
+        precision : Number of decimal places to round to (default: 15).
+        If decimals is negative, it specifies the number of positions to the
+        left of the decimal point.
 
     Returns:
         array: array of vector field; size of the array is the size of the
@@ -617,7 +627,10 @@ def readsymmtensor(path, time_name=None, name=None, structured=False,
         name: str\n
         structured: False or True\n
         boundary: None or str\n
-        order: "F" (default) or "C"
+        order: "F" (default) or "C" \n
+        precision : Number of decimal places to round to (default: 15).
+        If decimals is negative, it specifies the number of positions to the
+        left of the decimal point.
 
     Returns:
         array: array of symmetrical tensor field; size of the array is the size
@@ -641,7 +654,7 @@ def readsymmtensor(path, time_name=None, name=None, structured=False,
         if scalar.uniform:
             print("internalfield is uniform; so no reshape possible...")
         else:
-            values[0:6, :] = values[0:6, vector.ind]
+            values[0:6, :] = values[0:6, scalar.ind]
             shape = (6,) + tuple(scalar.shape)
             values = np.reshape(values, shape, order = order)
 
@@ -660,7 +673,10 @@ def readtensor(path, time_name=None, name=None, structured=False, boundary=None,
         name: str\n
         structured: False or True\n
         boundary: None or str\n
-        order: "F" (default) or "C"
+        order: "F" (default) or "C" \n
+        precision : Number of decimal places to round to (default: 15).
+        If decimals is negative, it specifies the number of positions to the
+        left of the decimal point.
 
     Returns:
         array: array of tensor field; size of the array is the size of the
@@ -685,7 +701,7 @@ def readtensor(path, time_name=None, name=None, structured=False, boundary=None,
         if scalar.uniform:
             print("internalfield is uniform; so no reshape possible...")
         else:
-            values[0:9, :] = values[0:9, vector.ind]
+            values[0:9, :] = values[0:9, scalar.ind]
             shape = (9,) + tuple(scalar.shape)
             values = np.reshape(values, shape, order = order)
 
@@ -700,7 +716,10 @@ def readmesh(rep, structured=False, boundary=None, order="F", precision=15):
         rep: str\n
         structured: False or True\n
         boundary: None or str\n
-        order: "F" (default) or "C"
+        order: "F" (default) or "C" \n
+        precision : Number of decimal places to round to (default: 15).
+        If decimals is negative, it specifies the number of positions to the
+        left of the decimal point.
 
     Returns:
         array: array of vector (Mesh X, Y, Z); size of the array is the size of
