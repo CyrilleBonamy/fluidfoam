@@ -5,6 +5,8 @@ This module provides functions to list and read OpenFoam PostProcessing Files:
 .. autofunction:: readforce
 
 """
+
+
 import os
 import numpy as np 
 
@@ -16,8 +18,9 @@ def varinforce():
                  'Mpox','Mpoy','Mpoz']
 
 def readforce(path, namepatch='forces', time_name='0', name='forces'):
-    """ read the data contained in the force file .
-    create the forces variables in the Forcesfile object
+    """
+    Read the data contained in the force file .
+    Create the forces variables in the Forcesfile object
 
     Args:
         path: str\n
