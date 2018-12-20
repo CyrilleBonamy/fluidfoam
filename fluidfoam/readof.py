@@ -592,17 +592,15 @@ def readvector(path, time_name=None, name=None, structured=False, boundary=None,
     if vector.type_data != 'vector':  # pragma: no cover
         raise ValueError('This file does not contain a vector.')
 
-    if structured:
-        if scalar.uniform:
-            print("internalfield is uniform; so no reshape possible...")
-            shape = (3, values.size//3)
-        else:
-            values = values[vector.ind]
-            shape = (3,) + tuple(vector.shape)
-    else:
-        shape = (3, values.size//3)
-
+    shape = (3, values.size//3)
     values = np.reshape(values, shape, order = order)
+    if structured:
+        if vector.uniform:
+            print("internalfield is uniform; so no reshape possible...")
+        else:
+            values[0:3, :] = values[0:3, vector.ind]
+            shape = (3,) + tuple(vector.shape)
+            values = np.reshape(values, shape, order = order)
 
     return values
 
