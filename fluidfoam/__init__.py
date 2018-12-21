@@ -6,7 +6,7 @@ from fluidfoam.readof import typefield
 from fluidfoam.processing1d import create1dprofil, read1dprofil
 from fluidfoam.processing1d import plot1dprofil
 from fluidfoam.meshdesign import getgz,getdzs
-from fluidfoam.readpostpro import readforce
+from fluidfoam.readpostpro import readforce, readprobes
 from fluidfoam._version import __version__
 
 warnings.simplefilter('always', category=DeprecationWarning)
