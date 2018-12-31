@@ -37,7 +37,7 @@ The simplest way to install fluidfoam is by using pip::
   pip install fluidfoam
 
 You can get the source code from `Bitbucket
-<https://bitbucket.org/sedfoam/fluidfoam>`_ or from `the Python Package Index
+<https://bitbucket.org/fluiddyn/fluidfoam>`_ or from `the Python Package Index
 <https://pypi.python.org/pypi/fluidfoam/>`_.
 
 The development mode is often useful. From the root directory, run::

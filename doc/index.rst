@@ -13,9 +13,9 @@ What is this repository for?
 ----------------------------
 
 * Openfoam Tools
-* Version : 0.1.2
+* Version : 0.1.4
 * Supported OpenFoam Versions : 2.4.0, 4.1, 5.0, 6.0, v1712+, v1806+
-* Supported Python Versions : 2.7.x, 3.x
+* Supported Python Versions : 2.7.x, >= 3.4
 
 
 Deployment instructions
@@ -113,7 +113,7 @@ functions.
    :toctree: generated/
 
    fluidfoam.readof
-   fluidfoam.create1dprofile
+   fluidfoam.processing1d
    fluidfoam.readpostpro
    fluidfoam.meshdesign
 
@@ -121,12 +121,21 @@ More
 ----
 
 .. |release| image:: https://img.shields.io/pypi/v/fluidfoam.svg
-   :target: https://pypi.org/project/fluidfoam/
+   :target: https://pypi.python.org/pypi/fluidfoam/
    :alt: Latest version
+
+.. |docs| image:: https://readthedocs.org/projects/fluidfoam/badge/?version=latest
+   :target: http://fluidfoam.readthedocs.org
+   :alt: Documentation status
+
+.. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/ipwdnr1an8su429q?svg=true
+.. _AppVeyor: https://ci.appveyor.com/project/CyrilleBonamy/fluidfoam/history
 
 .. |coverage| image:: https://codecov.io/bb/sedfoam/fluidfoam/branch/default/graph/badge.svg
    :target: https://codecov.io/bb/sedfoam/fluidfoam/branch/default/
    :alt: Code coverage
+
+
 
 
 - `FluidFoam forge on Bitbucket <https://bitbucket.org/fluiddyn/fluidfoam>`_
