@@ -5,4 +5,5 @@ cython
 mako
 psutil
 pandas
+sphinx_gallery
 jupyter
