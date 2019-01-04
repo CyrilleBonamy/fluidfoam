@@ -7,4 +7,6 @@ dist
 fluidfoam.egg-info
 .coverage
 _build
+build
+auto_examples
 generated

@@ -117,6 +117,13 @@ functions.
    fluidfoam.readpostpro
    fluidfoam.meshdesign
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Example galleries:
+
+   auto_examples/index
+
+
 More
 ----
 
