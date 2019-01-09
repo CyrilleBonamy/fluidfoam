@@ -746,7 +746,8 @@ def readmesh(rep, structured=False, boundary=None, order="F", precision=15):
 
     if boundary is not None:
         facefile = OpenFoamFile(rep + '/constant/polyMesh/', name='faces')
-        pointfile = OpenFoamFile(rep + '/constant/polyMesh/', name='points')
+        pointfile = OpenFoamFile(rep + '/constant/polyMesh/', name='points',
+                                 precision=precision)
         bounfile = OpenFoamFile(rep + '/constant/polyMesh/', name='boundary')
         id0 = int(bounfile.boundaryface[str.encode(boundary)][b'startFace'])
         nfaces = int(bounfile.boundaryface[str.encode(boundary)][b'nFaces'])
@@ -768,7 +769,8 @@ def readmesh(rep, structured=False, boundary=None, order="F", precision=15):
             xs, ys, zs = readvector(rep, 'constant', 'C', precision=precision)
         else:
             facefile = OpenFoamFile(rep + '/constant/polyMesh/', name='faces')
-            pointfile = OpenFoamFile(rep + '/constant/polyMesh/', name='points')
+            pointfile = OpenFoamFile(rep + '/constant/polyMesh/', name='points',
+                                     precision=precision)
             neigh = OpenFoamFile(rep + '/constant/polyMesh/', name='neighbour')
             xs = np.empty(owner.nb_cell, dtype=float)
             ys = np.empty(owner.nb_cell, dtype=float)
