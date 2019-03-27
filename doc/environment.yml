@@ -8,7 +8,7 @@ dependencies:
   - cython
   - h5py
   - sphinx
-  - sphinx_gallery
+  - sphinx-gallery
   - numpydoc
   - jupyter
   - matplotlib
