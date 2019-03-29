@@ -94,16 +94,17 @@ def readprobes(path, probes_name='probes', time_name='0', name='U'):
             line = line.split(b'(')
             dim = len(line[1].split())
             time_vect = np.zeros(len(content)-j)
-            time_vect[j] = line[0]
+            time_vect[0] = line[0]
             tab = np.zeros([len(content)-j, len(line)-1, dim],
                            dtype=float)
-            print('Reading file ' + path)
+            print('Reading file ' + os.path.join(path, 'postProcessing',
+                                                 probes_name, time_name, name))
             print(str(len(line)-1) + ' probes over ' + str(len(tab[:, 0, 0])) +
                   ' timesteps')
             for k, probedata in enumerate(line[1:]):
                 values = probedata.split()
                 for l, vect in enumerate(values):
-                    tab[j, k, l] = np.array(vect, dtype=float)
+                    tab[0, k, l] = np.array(vect, dtype=float)
             j = 0
         else:
             j += 1
