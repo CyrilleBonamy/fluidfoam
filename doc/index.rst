@@ -79,6 +79,7 @@ Contacts
 * Pierre.Augier@legi.cnrs.fr
 * Guillaume.Maurice@univ-grenoble-alpes.fr
 * Tim.Nagel@legi.cnrs.fr
+* Antoine.Mathieu@univ-grenoble-alpes.fr
 
 License
 -------

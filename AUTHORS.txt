@@ -1,5 +1,6 @@
 Cyrille Bonamy
 Julien Chauchat
+Pierre Augier
 Guillaume Maurice
 Tim Nagel
-Pierre Augier
+Antoine Mathieu
