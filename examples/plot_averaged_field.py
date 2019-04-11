@@ -1,9 +1,9 @@
 """
-Read and Plot a contour of OpenFoam output from a structured mesh
+Read and Plot a spatially averaged profile from a structured mesh
 =================================================================
 
-This example reads and plots a contour of the first component of an OpenFoam
-vector field from a structured mesh
+This example reads and plots a spatially averaged profile of the first 
+component of an OpenFoam vector field from a structured mesh
 """
 
 ###############################################################################
@@ -15,7 +15,6 @@ vector field from a structured mesh
 
 # import readmesh function from fluidfoam package
 from fluidfoam import readmesh
-
 
 sol = '../output_samples/box/'
 
@@ -36,15 +35,23 @@ timename = '0'
 vel = readvector(sol, timename, 'U', True)
 
 ###############################################################################
-# Now plots the contour of the first velocity component at a given z position
-# ---------------------------------------------------------------------------
-# 
+# Averaging along x and z axis (1 and 3)
+# --------------------------------------
+#
+import numpy as np
+
+vel_averaged = np.mean(np.mean(vel, 3), 1)
+
+###############################################################################
+# Now plots the profile of the averaged first velocity component
+# --------------------------------------------------------------
+#
 
 import matplotlib.pyplot as plt
 
 plt.figure()
-plt.contourf(x[:, :, 0], y[:, :, 0], vel[0, :, :, 0])
+plt.plot(vel_averaged[0], y[0, :, 0])
 
 #Setting axis labels
-plt.xlabel('x (m)')
+plt.xlabel('U (m/s)')
 plt.ylabel('y (m)')
