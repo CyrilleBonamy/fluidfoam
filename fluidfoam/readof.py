@@ -20,7 +20,6 @@ This module provides functions to read OpenFoam Files:
 
 """
 
-
 import os
 import gzip
 import struct
@@ -28,12 +27,12 @@ import numpy as np
 import scipy.spatial as ss
 
 # define color
-W = '\033[0m'  # white (normal)
-R = '\033[31m'  # red
-G = '\033[32m'  # green
-O = '\033[33m'  # orange
-B = '\033[34m'  # blue
-P = '\033[35m'  # purple
+W = "\033[0m"  # white (normal)
+R = "\033[31m"  # red
+G = "\033[32m"  # green
+O = "\033[33m"  # orange
+B = "\033[34m"  # blue
+P = "\033[35m"  # purple
 
 
 def _make_path(path, time_name=None, name=None):
@@ -117,9 +116,9 @@ class OpenFoamFile(object):
             self.is_ascii = True
             self.noheader = True
         try:
-            self.is_SP    = b"scalar=32" in self.header[b"arch"]
+            self.is_SP = b"scalar=32" in self.header[b"arch"]
         except KeyError:
-            self.is_SP    = False
+            self.is_SP = False
 
         for line in self.lines_stripped:
             if line.startswith(b"dimensions"):
@@ -129,9 +128,9 @@ class OpenFoamFile(object):
         self.boundary = self._parse_session(b"boundaryField")
 
         if name is None:
-            self._parse_data(boundary=boundary,
-                             precision=precision,
-                             datatype=datatype)
+            self._parse_data(
+                boundary=boundary, precision=precision, datatype=datatype
+            )
         elif name.endswith("boundary"):
             self.boundaryface = self._parse_boundaryfile()
         elif name.endswith("faces"):
@@ -143,13 +142,13 @@ class OpenFoamFile(object):
         elif name.startswith("sets/"):
             self._parse_sets()
         else:
-            self._parse_data(boundary=boundary,
-                             precision=precision,
-                             datatype=datatype)
+            self._parse_data(
+                boundary=boundary, precision=precision, datatype=datatype
+            )
         if structured:
-            self._determine_order(boundary=boundary,
-                                  order=order,
-                                  precision=precision)
+            self._determine_order(
+                boundary=boundary, order=order, precision=precision
+            )
 
     def _parse_boundaryfile(self):
 
@@ -219,10 +218,11 @@ class OpenFoamFile(object):
     def _parse_data(self, boundary, datatype, precision=15):
 
         import sys
+
         if boundary is not None:
             boun = str.encode(boundary)
-            if (np.size(self.content.split(boun))<=2):
-                iboun =1
+            if np.size(self.content.split(boun)) <= 2:
+                iboun = 1
             else:
                 lines = self.content.split(b"\n")
                 iboun = 0
@@ -233,15 +233,15 @@ class OpenFoamFile(object):
                         break
 
             if iboun >= np.size(self.content.split(boun)):
-                print(R+"Error : No boundary/patch "+str(boun)+W)
+                print(R + "Error : No boundary/patch " + str(boun) + W)
                 sys.exit(1)
 
             elif b"value" in self.content.split(boun)[iboun].split(b"}")[0]:
                 data = self.content.split(boun)[iboun].split(b"value")[1]
             else:
                 if self.verbose:
-                    print(R+"Warning : No data on boundary/patch")
-                    print("Using the values of the nearest cells"+W)
+                    print(R + "Warning : No data on boundary/patch")
+                    print("Using the values of the nearest cells" + W)
                 self._nearest_data(boundary=boundary, precision=precision)
                 return
         else:
@@ -287,9 +287,13 @@ class OpenFoamFile(object):
             else:
                 data = words[1].split(b";")[0]
             if self.verbose:
-                print(R+"Warning : uniform field  of type "
-                        + self.type_data + "!\n")
-                print("Only constant field in output\n"+W)
+                print(
+                    R
+                    + "Warning : uniform field  of type "
+                    + self.type_data
+                    + "!\n"
+                )
+                print("Only constant field in output\n" + W)
         elif shortline.count(b";") >= 1:
             nb_pts = int(shortline.split(b"(")[0])
             data = shortline.split(b"(")[1]
@@ -298,8 +302,12 @@ class OpenFoamFile(object):
         elif self.codestream:
             nb_pts = 0
             if self.verbose:
-                print(R+"Warning : codeStream field! "
-                        + "I can not read the source code!\n"+W)
+                print(
+                    R
+                    + "Warning : codeStream field! "
+                    + "I can not read the source code!\n"
+                    + W
+                )
         else:
             nb_pts = int(lines[1])
             data = b"\n(".join(data.split(b"\n(")[1:])
@@ -349,12 +357,12 @@ class OpenFoamFile(object):
         bounfile = OpenFoamFile(
             self.pathcase + "/constant/polyMesh/",
             name="boundary",
-            verbose=self.verbose
+            verbose=self.verbose,
         )
         ownerfile = OpenFoamFile(
             self.pathcase + "/constant/polyMesh/",
             name="owner",
-            verbose=self.verbose
+            verbose=self.verbose,
         )
         id0 = int(bounfile.boundaryface[str.encode(boundary)][b"startFace"])
         nfaces = int(bounfile.boundaryface[str.encode(boundary)][b"nFaces"])
@@ -392,9 +400,13 @@ class OpenFoamFile(object):
             else:
                 data = words[1].split(b";")[0]
             if self.verbose:
-                print(R+"Warning : uniform field  of type "
-                        + self.type_data + "!\n")
-                print("Only constant field in output\n"+W)
+                print(
+                    R
+                    + "Warning : uniform field  of type "
+                    + self.type_data
+                    + "!\n"
+                )
+                print("Only constant field in output\n" + W)
         elif shortline.count(b";") >= 1:
             nb_pts = int(shortline.split(b"(")[0])
             data = shortline.split(b"(")[1]
@@ -403,8 +415,12 @@ class OpenFoamFile(object):
         elif self.codestream:
             nb_pts = 0
             if self.verbose:
-                print(R+"Warning : codeStream field! "
-                        + "I can not read the source code!\n"+W)
+                print(
+                    R
+                    + "Warning : codeStream field! "
+                    + "I can not read the source code!\n"
+                    + W
+                )
         else:
             nb_pts = int(lines[1])
             data = b"\n(".join(data.split(b"\n(")[1:])
@@ -456,8 +472,8 @@ class OpenFoamFile(object):
                 nv = 9
             valuesbou = np.empty(nv * nfaces, dtype=float)
             for i in range(nfaces):
-                valuesbou[i * nv: (i + 1) * nv] = values[
-                    nv * cell[i]: nv * (cell[i] + 1)
+                valuesbou[i * nv : (i + 1) * nv] = values[
+                    nv * cell[i] : nv * (cell[i] + 1)
                 ]
             self.values = valuesbou
         if self.type_data == "vector":
@@ -489,22 +505,22 @@ class OpenFoamFile(object):
             nb_numbers = self.nfaces + 1
             self.pointsbyface = struct.unpack(
                 "{}i".format(nb_numbers),
-                data[0: nb_numbers * struct.calcsize("i")],
+                data[0 : nb_numbers * struct.calcsize("i")],
             )
-            data = self.content.split(
-                str.encode(str(self.pointsbyface[-1])))[1]
+            data = self.content.split(str.encode(str(self.pointsbyface[-1])))[1]
             data = b"\n(".join(data.split(b"\n(")[1:])
 
             for i in range(self.nfaces):
                 self.faces[i] = {}
-                self.faces[i]["npts"] = self.pointsbyface[i + 1] - \
-                    self.pointsbyface[i]
+                self.faces[i]["npts"] = (
+                    self.pointsbyface[i + 1] - self.pointsbyface[i]
+                )
                 self.faces[i]["id_pts"] = np.array(
                     struct.unpack(
                         "{}i".format(self.faces[i]["npts"]),
                         data[
                             self.pointsbyface[i]
-                            * struct.calcsize("i"): self.pointsbyface[i + 1]
+                            * struct.calcsize("i") : self.pointsbyface[i + 1]
                             * struct.calcsize("i")
                         ],
                     )
@@ -518,8 +534,10 @@ class OpenFoamFile(object):
                 else:
                     self.faces[i - 1] = {}
                     self.faces[i - 1]["npts"] = int(line.split(b"(")[0])
-                    self.faces[i - 1]["id_pts"] = [int(s) for s in
-                                                   (line.split(b"(")[1].split(b")")[0]).split()]
+                    self.faces[i - 1]["id_pts"] = [
+                        int(s)
+                        for s in (line.split(b"(")[1].split(b")")[0]).split()
+                    ]
 
     def _parse_points(self, precision):
 
@@ -531,7 +549,7 @@ class OpenFoamFile(object):
                 continue
             break
         self.nb_pts = int(line)
-        data = self.content.split(b'}', 1)[1]
+        data = self.content.split(b"}", 1)[1]
         data = data.split(line, 1)[1]
         self.type_data = self.header[b"class"]
 
@@ -575,7 +593,7 @@ class OpenFoamFile(object):
         try:
             self.nb_faces = int(line)
             data = self.content.split(line, 2)[-1]
-        # for mesh with number of cells <= 10 
+        # for mesh with number of cells <= 10
         except ValueError:
             for line in self.lines_stripped:
                 try:
@@ -605,7 +623,7 @@ class OpenFoamFile(object):
             data = b" ".join(lines).strip()
             self.values = np.array([int(s) for s in data.split()])
         if self.values.min() < 0:
-            self.values = self.values[np.where(self.values>=0)[0]]
+            self.values = self.values[np.where(self.values >= 0)[0]]
             self.nb_faces = self.values.size
         self.nb_cell = np.max(self.values) + 1
 
@@ -644,7 +662,7 @@ class OpenFoamFile(object):
             self.pathcase,
             boundary=boundary,
             precision=precision,
-            verbose=self.verbose
+            verbose=self.verbose,
         )
         nb_cell = xs.size
         nx = np.unique(xs).size
@@ -1051,7 +1069,7 @@ def readmesh(
     region=None,
     order="F",
     precision=15,
-    verbose=True
+    verbose=True,
 ):
     """
     Read OpenFoam mesh and reshape if necessary (in cartesian structured mesh).
@@ -1091,38 +1109,34 @@ def readmesh(
     if region is None:
         meshpath = "/constant/polyMesh/"
     else:
-        meshpath = "/constant/"+region+"/polyMesh/"
-    if not os.path.exists(path+meshpath):
+        meshpath = "/constant/" + region + "/polyMesh/"
+    if not os.path.exists(path + meshpath):
         raise ValueError(
-            "No ", meshpath, " directory in ",
+            "No ",
+            meshpath,
+            " directory in ",
             path,
             " Please verify the directory of your case.",
         )
 
     if boundary is not None:
-        facefile = OpenFoamFile(
-            path + meshpath, name="faces", verbose=verbose
-        )
+        facefile = OpenFoamFile(path + meshpath, name="faces", verbose=verbose)
         if time_name is not None:
             pointfile = OpenFoamFile(
                 path=path,
                 time_name=time_name,
                 name="polyMesh/points",
                 precision=precision,
-                verbose=verbose
+                verbose=verbose,
             )
         else:
             pointfile = OpenFoamFile(
                 path + meshpath,
                 name="points",
                 precision=precision,
-                verbose=verbose
+                verbose=verbose,
             )
-        bounfile = OpenFoamFile(
-            path + meshpath,
-            name="boundary",
-            verbose=verbose
-        )
+        bounfile = OpenFoamFile(path + meshpath, name="boundary", verbose=verbose)
         id0 = int(bounfile.boundaryface[str.encode(boundary)][b"startFace"])
         nmesh = int(bounfile.boundaryface[str.encode(boundary)][b"nFaces"])
 
@@ -1138,22 +1152,26 @@ def readmesh(
             ys[i] = np.mean(pointfile.values_y[id_pts[0:npts]])
             zs[i] = np.mean(pointfile.values_z[id_pts[0:npts]])
     else:
-        if (time_name is None and region is None
-                and os.path.exists(os.path.join(path, "constant/C"))):
+        if (
+            time_name is None
+            and region is None
+            and os.path.exists(os.path.join(path, "constant/C"))
+        ):
             xs, ys, zs = readvector(
                 path, "constant", "C", precision=precision, verbose=verbose
             )
             nmesh = np.size(xs)
-        elif (time_name is not None and region is None
-              and os.path.exists(_make_path(path, time_name, "C"))):
+        elif (
+            time_name is not None
+            and region is None
+            and os.path.exists(_make_path(path, time_name, "C"))
+        ):
             xs, ys, zs = readvector(
                 path, time_name, "C", precision=precision, verbose=verbose
             )
             nmesh = np.size(xs)
         else:
-            owner = OpenFoamFile(
-                path + meshpath, name="owner", verbose=verbose
-            )
+            owner = OpenFoamFile(path + meshpath, name="owner", verbose=verbose)
             nmesh = owner.nb_cell
             facefile = OpenFoamFile(
                 path + meshpath, name="faces", verbose=verbose
@@ -1164,14 +1182,14 @@ def readmesh(
                     time_name=time_name,
                     name="polyMesh/points",
                     precision=precision,
-                    verbose=verbose
+                    verbose=verbose,
                 )
             else:
                 pointfile = OpenFoamFile(
                     path + meshpath,
                     name="points",
                     precision=precision,
-                    verbose=verbose
+                    verbose=verbose,
                 )
             neigh = OpenFoamFile(
                 path + meshpath, name="neighbour", verbose=verbose
@@ -1217,19 +1235,16 @@ def readmesh(
         zs = zs[ind].reshape(shape, order=order)
     if sets is not None:
         setsfile = OpenFoamFile(
-            path=path+meshpath,
-            name="sets/"+sets,
+            path=path + meshpath,
+            name="sets/" + sets,
             precision=precision,
-            verbose=verbose
+            verbose=verbose,
         )
         xs = xs[setsfile.values]
         ys = ys[setsfile.values]
         zs = zs[setsfile.values]
 
     return xs, ys, zs
-
-
-
 
 
 def getVolumes(
@@ -1241,7 +1256,7 @@ def getVolumes(
     order="F",
     precision=15,
     verbose=True,
-    box=None
+    box=None,
 ):
     """
     Reads OpenFoam mesh and returns the cell centroids and cell volumes
@@ -1274,39 +1289,32 @@ def getVolumes(
     if region is None:
         meshpath = "/constant/polyMesh/"
     else:
-        meshpath = "/constant/"+region+"/polyMesh/"
-    if not os.path.exists(path+meshpath):
+        meshpath = "/constant/" + region + "/polyMesh/"
+    if not os.path.exists(path + meshpath):
         raise ValueError(
-            "No ", meshpath, " directory in ",
+            "No ",
+            meshpath,
+            " directory in ",
             path,
             " Please verify the directory of your case.",
         )
 
-    owner = OpenFoamFile(
-        path + meshpath, name="owner", verbose=verbose
-    )
+    owner = OpenFoamFile(path + meshpath, name="owner", verbose=verbose)
     nmesh = owner.nb_cell
-    facefile = OpenFoamFile(
-        path + meshpath, name="faces", verbose=verbose
-    )
+    facefile = OpenFoamFile(path + meshpath, name="faces", verbose=verbose)
     if time_name is not None and region is None:
         pointfile = OpenFoamFile(
             path=path,
             time_name=time_name,
             name="polyMesh/points",
             precision=precision,
-            verbose=verbose
+            verbose=verbose,
         )
     else:
         pointfile = OpenFoamFile(
-            path + meshpath,
-            name="points",
-            precision=precision,
-            verbose=verbose
+            path + meshpath, name="points", precision=precision, verbose=verbose
         )
-    neigh = OpenFoamFile(
-        path + meshpath, name="neighbour", verbose=verbose
-    )
+    neigh = OpenFoamFile(path + meshpath, name="neighbour", verbose=verbose)
     xs = np.empty(owner.nb_cell, dtype=float)
     ys = np.empty(owner.nb_cell, dtype=float)
     zs = np.empty(owner.nb_cell, dtype=float)
@@ -1333,29 +1341,33 @@ def getVolumes(
         maxz = np.max(pointfile.values_z)
         box = ((minx, miny, minz), (maxx, maxy, maxz))
 
-    centroidCell = np.empty((0,3), dtype=float)
+    centroidCell = np.empty((0, 3), dtype=float)
     VolCell_all = np.empty(owner.nb_cell, dtype=float)
 
     for i in range(owner.nb_cell):
-        xs[i] = np.mean(
-            pointfile.values_x[np.unique(np.concatenate(face[i])[:])]
-        )
-        ys[i] = np.mean(
-            pointfile.values_y[np.unique(np.concatenate(face[i])[:])]
-        )
-        zs[i] = np.mean(
-            pointfile.values_z[np.unique(np.concatenate(face[i])[:])]
-        )
+        xs[i] = np.mean(pointfile.values_x[np.unique(np.concatenate(face[i])[:])])
+        ys[i] = np.mean(pointfile.values_y[np.unique(np.concatenate(face[i])[:])])
+        zs[i] = np.mean(pointfile.values_z[np.unique(np.concatenate(face[i])[:])])
 
-        if box[0][0] < xs[i] < box[1][0] and box[0][1] < ys[i] < box[1][1] and box[0][2] < zs[i] < box[1][2]:
-            pointsCell=[]
+        if (
+            box[0][0] < xs[i] < box[1][0]
+            and box[0][1] < ys[i] < box[1][1]
+            and box[0][2] < zs[i] < box[1][2]
+        ):
+            pointsCell = []
             for k in zip(np.unique(np.concatenate(face[i])[:])):
-                pointsCell.append([pointfile.values_x[k],pointfile.values_y[k],pointfile.values_z[k]])
+                pointsCell.append(
+                    [
+                        pointfile.values_x[k],
+                        pointfile.values_y[k],
+                        pointfile.values_z[k],
+                    ]
+                )
 
             # Add 3D elements into the empty array
             element = np.array([xs[i], ys[i], zs[i]])
             centroidCell = np.append(centroidCell, [element], axis=0)
-            VolCell_all[i]=ss.ConvexHull(pointsCell).volume
+            VolCell_all[i] = ss.ConvexHull(pointsCell).volume
     VolCell = VolCell_all[VolCell_all != 0]
     if structured:
         nx = np.unique(xs).size
@@ -1372,7 +1384,7 @@ def getVolumes(
         ind = np.lexsort((xs, ys, zs))
         shape = (nx, ny, nz)
         VolCell = VolCell[ind].reshape(shape, order=order)
-    return centroidCell,VolCell
+    return centroidCell, VolCell
 
 
 if __name__ == "__main__":
