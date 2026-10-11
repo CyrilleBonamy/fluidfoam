@@ -19,7 +19,7 @@ fluidfoam
 
 .. start-intro
 
-The fluidfoam package provides Python classes useful to perform some plot with OpenFoam data.
+Efficient Python library to read, analyze, and visualize OpenFOAM simulation data (ASCII/binary, decomposed cases) — fast, flexible, and publication-ready.
 
 What is this repository for?
 ----------------------------

@@ -12,7 +12,7 @@ keywords = ["Openfoam", "postprocessing", "python", "CFD"]
 authors = [
   { name="Cyrille Bonamy", email="cyrille.bonamy@univ-grenoble-alpes.fr" },
 ]
-description = "Openfoam PostProcessing Python Tools"
+description = "Efficient Python library to read, analyze, and visualize OpenFOAM simulation data (ASCII/binary, decomposed cases) — fast, flexible, and publication-ready."
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
