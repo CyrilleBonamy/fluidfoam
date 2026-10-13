@@ -22,8 +22,9 @@ Decomposed cases (``processor0``, ``processor1``... or collated
 ``processors<N>`` directories) are read transparently by the functions
 above when the requested file is not available in the reconstructed case
 (see ``_decomposed_fallback``).
-Not supported for decomposed cases: ``boundary``, ``sets``, ``region``
-and ``getVolumes``.
+The ``boundary`` option is supported (the faces of a patch are put back in the
+order of the reconstructed case thanks to ``faceProcAddressing``).
+Not supported for decomposed cases: ``sets``, ``region`` and ``getVolumes``.
 
 """
 
@@ -234,9 +235,7 @@ def _extract_collated(dirs, tmp, required, optional=()):
                     continue
                 blocks = _read_collated_blocks(filename)
                 # only the first block carries the FoamFile header
-                h = re.match(
-                    rb"\s*FoamFile\s*\{.*?\}\n", blocks[min(blocks)], re.S
-                )
+                h = re.match(rb"\s*FoamFile\s*\{.*?\}\n", blocks[min(blocks)], re.S)
                 header = h.group(0) if h else b""
                 for rank, block in blocks.items():
                     if not block.lstrip().startswith(b"FoamFile"):
@@ -267,7 +266,9 @@ def _use_processors(path, time_name, name, kind):
     if time_name == "latestTime":
         t_dec = _latest_time_or_none(dirs[0])
         t_root = _latest_time_or_none(path)
-        if t_dec is not None and (t_root is None or float(t_dec) > float(t_root)):
+        if t_dec is not None and (
+            t_root is None or float(t_dec) > float(t_root)
+        ):
             return layout, t_dec
         return None, time_name
 
@@ -364,28 +365,124 @@ def _reconstruct(func, kind, args, time_name, data_path, layout):
     return values
 
 
+def _patch_range(procdir, patch):
+    """(startFace, nFaces) of a patch in the local mesh of a processor.
+
+    None if the patch is not in the boundary file of the processor.
+    """
+    mesh = os.path.join(procdir, "constant", "polyMesh")
+    boundary = OpenFoamFile(mesh, name="boundary", verbose=False).boundaryface
+    key = str.encode(patch)
+    if key not in boundary:
+        return None
+    return int(boundary[key][b"startFace"]), int(boundary[key][b"nFaces"])
+
+
+def _reconstruct_boundary(func, kind, args, time_name, data_path, layout):
+    """Read a patch on each processorN of data_path and rebuild it.
+
+    The faces of the patch of a processor are the local faces
+    startFace ... startFace + nFaces - 1; faceProcAddressing gives, for each
+    local face, the index of the face in the global mesh (+ 1, the sign
+    tells that the face is flipped). The faces of a patch are contiguous in
+    the global mesh, so sorting their global indices gives the order of the
+    reconstructed case.
+    """
+    path = args["path"]
+    patch = args["boundary"]
+    procs = _processor_dirs(data_path)
+    structured = args.get("structured", False)
+    order = args.get("order", "F")
+    if args.get("verbose", True):
+        print("Reading %s decomposed case (%d processors)" % (layout, len(procs)))
+
+    sub = dict(args)
+    sub.update(structured=False, verbose=False, time_name=time_name)
+    ids, parts = [], []
+    for procdir in procs:
+        local = _patch_range(procdir, patch)
+        if local is None or local[1] == 0:  # no face of the patch here
+            continue
+        start, nfaces = local
+        face_addr = _read_label_list(
+            os.path.join(procdir, "constant", "polyMesh", "faceProcAddressing")
+        )
+        sub["path"] = procdir
+        result = func(**sub)
+        if kind == "mesh":
+            result = np.vstack(result)
+        result = np.asarray(result, dtype=float)
+        if result.shape[-1] != nfaces:
+            if result.shape[-1] != 1:  # a uniform value is allowed
+                raise ValueError(
+                    "%d values for the %d faces of the patch %s of %s"
+                    % (result.shape[-1], nfaces, patch, procdir)
+                )
+            result = np.broadcast_to(result, result.shape[:-1] + (nfaces,))
+        ids.append(np.abs(face_addr[start : start + nfaces]) - 1)
+        parts.append(result)
+    if not parts:
+        raise ValueError("No face of the patch %s found in %s" % (patch, path))
+
+    ids = np.concatenate(ids)
+    sort = np.argsort(ids, kind="stable")
+    if ids.size > 1 and np.any(np.diff(ids[sort]) != 1):
+        raise ValueError("Inconsistent faceProcAddressing for the patch " + patch)
+    values = np.concatenate(parts, axis=-1)[..., sort]
+
+    if kind == "mesh":
+        if structured:
+            ind, shape = _structured_index(*values)
+            return tuple(v[ind].reshape(shape, order=order) for v in values)
+        return values[0], values[1], values[2]
+
+    if structured:
+        xs, ys, zs = readmesh(
+            path,
+            boundary=patch,
+            precision=args.get("precision", 15),
+            verbose=False,
+        )
+        ind, shape = _structured_index(xs, ys, zs)
+        values = values[..., ind]
+        values = values.reshape(values.shape[:-1] + shape, order=order)
+    return values
+
+
 def _read_decomposed(func, kind, args, time_name, layout):
     """Read a field or the mesh of a decomposed case and reconstruct it."""
     path = args["path"]
-    for key in ("boundary", "sets", "region"):
+    for key in ("sets", "region"):
         if args.get(key) is not None:
             raise NotImplementedError(
                 "Option '%s' is not supported for decomposed cases "
                 "(reconstruct the case with reconstructPar)." % key
             )
+    on_patch = args.get("boundary") is not None
+    reconstruct = _reconstruct_boundary if on_patch else _reconstruct
     if layout == "uncollated":
-        return _reconstruct(func, kind, args, time_name, path, layout)
+        return reconstruct(func, kind, args, time_name, path, layout)
 
     # collated: extract the blocks in a temporary processorN/ tree
     mesh = os.path.join("constant", "polyMesh")
-    required = [os.path.join(mesh, "cellProcAddressing")]
-    optional = []
+    if on_patch:
+        required = [
+            os.path.join(mesh, "boundary"),
+            os.path.join(mesh, "faceProcAddressing"),
+        ]
+        optional = [os.path.join(mesh, "owner")]  # values of the nearest cells
+    else:
+        required = [os.path.join(mesh, "cellProcAddressing")]
+        optional = []
     if kind == "field":
         required.append(os.path.join(time_name, args["name"]))
     else:
-        required += [
-            os.path.join(mesh, f) for f in ("faces", "owner", "neighbour")
-        ]
+        if on_patch:
+            required.append(os.path.join(mesh, "faces"))
+        else:
+            required += [
+                os.path.join(mesh, f) for f in ("faces", "owner", "neighbour")
+            ]
         points = os.path.join(mesh, "points")
         if time_name in (None, "0"):
             required.append(points)
@@ -394,7 +491,7 @@ def _read_decomposed(func, kind, args, time_name, layout):
             required.append(os.path.join(time_name, "polyMesh", "points"))
     with tempfile.TemporaryDirectory(prefix="fluidfoam_") as tmp:
         _extract_collated(_collated_dirs(path), tmp, required, optional)
-        return _reconstruct(func, kind, args, time_name, tmp, layout)
+        return reconstruct(func, kind, args, time_name, tmp, layout)
 
 
 def _decomposed_fallback(kind):
@@ -946,9 +1043,7 @@ class OpenFoamFile(object):
                     parts = line.split(b"(")
                     self.faces[i - 1] = {
                         "npts": int(parts[0]),
-                        "id_pts": [
-                            int(s) for s in parts[1].split(b")")[0].split()
-                        ],
+                        "id_pts": [int(s) for s in parts[1].split(b")")[0].split()],
                     }
 
     def _parse_points(self, precision):
