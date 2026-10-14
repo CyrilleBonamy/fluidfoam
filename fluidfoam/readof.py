@@ -416,7 +416,7 @@ def _reconstruct_boundary(func, kind, args, time_name, data_path, layout):
             if result.shape[-1] != 1:  # a uniform value is allowed
                 raise ValueError(
                     "%d values for the %d faces of the patch %s of %s"
-                    % (result.shape[-1], nfaces, patch, procdir)
+                    % (result.shape[-1], nfaces, patch, os.path.basename(procdir))
                 )
             result = np.broadcast_to(result, result.shape[:-1] + (nfaces,))
         ids.append(np.abs(face_addr[start : start + nfaces]) - 1)
