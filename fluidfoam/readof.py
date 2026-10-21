@@ -32,11 +32,38 @@ import os
 import re
 import gzip
 import struct
+import sys
 import inspect
 import tempfile
 import functools
 import numpy as np
 import scipy.spatial as ss
+from concurrent.futures import ThreadPoolExecutor
+
+# Number of threads used to read decomposed cases (processor0, processor1...).
+# 0 or 1 means sequential reading. Can be set with the environment variable
+# FLUIDFOAM_NTHREADS at import time, or at runtime with set_nthreads().
+NTHREADS = int(os.environ.get("FLUIDFOAM_NTHREADS", "0"))
+
+
+def set_nthreads(nthreads):
+    """Set the number of threads used to read decomposed cases.
+
+    0 or 1 disables parallel reading (sequential). A value greater than 1
+    enables it: at most min(nthreads, number of processors) threads are used.
+
+    """
+    global NTHREADS
+    NTHREADS = int(nthreads)
+
+
+def _effective_nthreads(nprocs):
+    """Number of threads actually used to read nprocs processor directories."""
+    if NTHREADS <= 1 or nprocs <= 1:
+        return 1
+    if NTHREADS < 0:  # -1 (or any negative): automatic
+        return min(nprocs, (os.cpu_count() or 1) * 2)
+    return min(nprocs, NTHREADS)
 
 # define color
 W = "\033[0m"  # white (normal)
@@ -333,16 +360,24 @@ def _reconstruct(func, kind, args, time_name, data_path, layout):
 
     sub = dict(args)
     sub.update(structured=False, verbose=False, time_name=time_name)
-    parts = []
-    for procdir in procs:
+
+    def read_one(procdir):
+        local = dict(sub)
+        local["path"] = procdir
         addr = _read_label_list(
             os.path.join(procdir, "constant", "polyMesh", "cellProcAddressing")
         )
-        sub["path"] = procdir
-        result = func(**sub)
+        result = func(**local)
         if kind == "mesh":
             result = np.vstack(result)
-        parts.append((addr, result))
+        return addr, result
+
+    nthreads = _effective_nthreads(len(procs))
+    if nthreads > 1:
+        with ThreadPoolExecutor(max_workers=nthreads) as executor:
+            parts = list(executor.map(read_one, procs))
+    else:
+        parts = [read_one(procdir) for procdir in procs]
 
     ncells = sum(addr.size for addr, _ in parts)
     if max(addr.max() for addr, _ in parts) + 1 != ncells:
@@ -398,17 +433,23 @@ def _reconstruct_boundary(func, kind, args, time_name, data_path, layout):
 
     sub = dict(args)
     sub.update(structured=False, verbose=False, time_name=time_name)
-    ids, parts = [], []
-    for procdir in procs:
-        local = _patch_range(procdir, patch)
-        if local is None or local[1] == 0:  # no face of the patch here
-            continue
-        start, nfaces = local
+    ranges = {
+        procdir: _patch_range(procdir, patch) for procdir in procs
+    }
+    active = [
+        procdir
+        for procdir in procs
+        if ranges[procdir] is not None and ranges[procdir][1] > 0
+    ]
+
+    def read_one(procdir):
+        local = dict(sub)
+        local["path"] = procdir
+        start, nfaces = ranges[procdir]
         face_addr = _read_label_list(
             os.path.join(procdir, "constant", "polyMesh", "faceProcAddressing")
         )
-        sub["path"] = procdir
-        result = func(**sub)
+        result = func(**local)
         if kind == "mesh":
             result = np.vstack(result)
         result = np.asarray(result, dtype=float)
@@ -419,8 +460,16 @@ def _reconstruct_boundary(func, kind, args, time_name, data_path, layout):
                     % (result.shape[-1], nfaces, patch, os.path.basename(procdir))
                 )
             result = np.broadcast_to(result, result.shape[:-1] + (nfaces,))
-        ids.append(np.abs(face_addr[start : start + nfaces]) - 1)
-        parts.append(result)
+        return np.abs(face_addr[start : start + nfaces]) - 1, result
+
+    nthreads = _effective_nthreads(len(active))
+    if nthreads > 1:
+        with ThreadPoolExecutor(max_workers=nthreads) as executor:
+            results = list(executor.map(read_one, active))
+    else:
+        results = [read_one(procdir) for procdir in active]
+    ids = [r[0] for r in results]
+    parts = [r[1] for r in results]
     if not parts:
         raise ValueError("No face of the patch %s found in %s" % (patch, path))
 
@@ -599,8 +648,10 @@ class OpenFoamFile(object):
             self.noheader = True
         try:
             self.is_SP = b"scalar=32" in self.header[b"arch"]
+            self.is_MSB = b"MSB" in self.header[b"arch"]
         except KeyError:
             self.is_SP = False
+            self.is_MSB = sys.byteorder == "big"
 
         for line in _iter_dimensions_lines(self.content):
             tmp = (line.split(b"[")[1]).split(b"]")[0]
@@ -837,12 +888,16 @@ class OpenFoamFile(object):
                 nb_numbers = 9 * nb_pts
             if self.is_SP:
                 self.values = np.frombuffer(
-                    data, dtype=np.float32, count=nb_numbers
+                    data,
+                    dtype=np.dtype(">f4" if self.is_MSB else "<f4"),
+                    count=nb_numbers,
                 ).astype(np.float64)
             else:
                 self.values = np.frombuffer(
-                    data, dtype=np.float64, count=nb_numbers
-                )
+                    data,
+                    dtype=np.dtype(">f8" if self.is_MSB else "<f8"),
+                    count=nb_numbers,
+                ).astype(np.float64)
         else:
             if self.type_data == "scalar":
                 self.values = np.array(
@@ -943,19 +998,14 @@ class OpenFoamFile(object):
             elif self.type_data == "tensor":
                 nb_numbers = 9 * nb_pts
             if self.is_SP:
-                values = np.array(
-                    struct.unpack(
-                        "{}f".format(nb_numbers),
-                        data[: nb_numbers * struct.calcsize("f")],
-                    )
-                )
+                dtype = np.dtype(">f4" if self.is_MSB else "<f4")
+                nb_bytes = nb_numbers * dtype.itemsize
             else:
-                values = np.array(
-                    struct.unpack(
-                        "{}d".format(nb_numbers),
-                        data[: nb_numbers * struct.calcsize("d")],
-                    )
-                )
+                dtype = np.dtype(">f8" if self.is_MSB else "<f8")
+                nb_bytes = nb_numbers * dtype.itemsize
+            values = np.frombuffer(
+                data[:nb_bytes], dtype=dtype, count=nb_numbers
+            ).astype(np.float64, copy=True)
         else:
             if self.type_data == "scalar":
                 values = np.array(
@@ -1011,10 +1061,12 @@ class OpenFoamFile(object):
 
         if not self.is_ascii:
             nb_numbers = self.nfaces + 1
-            self.pointsbyface = struct.unpack(
-                "{}i".format(nb_numbers),
-                data[0 : nb_numbers * struct.calcsize("i")],
-            )
+            dtype = np.dtype(">i4" if self.is_MSB else "<i4")
+            nb_bytes = nb_numbers * dtype.itemsize
+            pointsbyface = np.frombuffer(
+                data[:nb_bytes], dtype=dtype, count=nb_numbers
+            ).astype(np.int64, copy=True)
+            self.pointsbyface = pointsbyface.tolist()
             data = self.content.split(str.encode(str(self.pointsbyface[-1])))[1]
             data = b"\n(".join(data.split(b"\n(")[1:])
 
@@ -1023,16 +1075,15 @@ class OpenFoamFile(object):
                 self.faces[i]["npts"] = (
                     self.pointsbyface[i + 1] - self.pointsbyface[i]
                 )
-                self.faces[i]["id_pts"] = np.array(
-                    struct.unpack(
-                        "{}i".format(self.faces[i]["npts"]),
-                        data[
-                            self.pointsbyface[i]
-                            * struct.calcsize("i") : self.pointsbyface[i + 1]
-                            * struct.calcsize("i")
-                        ],
-                    )
-                )
+                self.faces[i]["id_pts"] = np.frombuffer(
+                    data[
+                        self.pointsbyface[i]
+                        * dtype.itemsize : self.pointsbyface[i + 1]
+                        * dtype.itemsize
+                    ],
+                    dtype=dtype,
+                    count=self.faces[i]["npts"],
+                ).astype(np.int64, copy=True)
         else:
             for i, line in enumerate(lines):
                 if i == 0:
@@ -1064,19 +1115,13 @@ class OpenFoamFile(object):
             nb_numbers = 3 * self.nb_pts
             data = b"\n(".join(data.split(b"\n(")[1:])
             if self.is_SP:
-                self.values = np.array(
-                    struct.unpack(
-                        "{}f".format(nb_numbers),
-                        data[: nb_numbers * struct.calcsize("f")],
-                    )
-                )
+                dtype = np.dtype(">f4" if self.is_MSB else "<f4")
             else:
-                self.values = np.array(
-                    struct.unpack(
-                        "{}d".format(nb_numbers),
-                        data[: nb_numbers * struct.calcsize("d")],
-                    )
-                )
+                dtype = np.dtype(">f8" if self.is_MSB else "<f8")
+            nb_bytes = nb_numbers * dtype.itemsize
+            self.values = np.frombuffer(
+                data[:nb_bytes], dtype=dtype, count=nb_numbers
+            ).astype(np.float64, copy=True)
         else:
             lines = data.split(b"\n(")
             lines = [line.split(b")")[0] for line in lines]
@@ -1121,12 +1166,11 @@ class OpenFoamFile(object):
         if not self.is_ascii:
             nb_numbers = self.nb_faces
             data = b"\n(".join(data.split(b"\n(")[1:])
-            self.values = np.array(
-                struct.unpack(
-                    "{}i".format(nb_numbers),
-                    data[: nb_numbers * struct.calcsize("i")],
-                )
-            )
+            dtype = np.dtype(">i4" if self.is_MSB else "<i4")
+            nb_bytes = nb_numbers * dtype.itemsize
+            self.values = np.frombuffer(
+                data[:nb_bytes], dtype=dtype, count=nb_numbers
+            ).astype(np.int64, copy=True)
         else:
             lines = data.split(b"\n(")[1:]
             lines = [line.split(b")")[0] for line in lines]
@@ -1154,12 +1198,11 @@ class OpenFoamFile(object):
         if not self.is_ascii:
             nb_numbers = self.nb_cell
             data = b"\n(".join(data.split(b"\n(")[1:])
-            self.values = np.array(
-                struct.unpack(
-                    "{}i".format(nb_numbers),
-                    data[: nb_numbers * struct.calcsize("i")],
-                )
-            )
+            dtype = np.dtype(">i4" if self.is_MSB else "<i4")
+            nb_bytes = nb_numbers * dtype.itemsize
+            self.values = np.frombuffer(
+                data[:nb_bytes], dtype=dtype, count=nb_numbers
+            ).astype(np.int64, copy=True)
         else:
             lines = data.split(b"\n(")[1:]
             lines = [line.split(b")")[0] for line in lines]
