@@ -24,7 +24,63 @@ above when the requested file is not available in the reconstructed case
 (see ``_decomposed_fallback``).
 The ``boundary`` option is supported (the faces of a patch are put back in the
 order of the reconstructed case thanks to ``faceProcAddressing``).
-Not supported for decomposed cases: ``sets``, ``region`` and ``getVolumes``.
+``getVolumes`` also reads decomposed cases (without ``box`` or ``structured``
+options; cells are put back in the global order thanks to
+``cellProcAddressing``).
+Not supported for decomposed cases: ``sets`` and ``region``.
+
+Parallel reading of decomposed cases
+------------------------------------
+
+The processor directories of a decomposed case are read sequentially by
+default. Parallel reading can be enabled either at import time with the
+environment variable ``FLUIDFOAM_NTHREADS``, or at runtime with
+:func:`set_nthreads`:
+
+.. autofunction:: set_nthreads
+
+- ``0`` or ``1`` (default): sequential reading;
+- an integer ``> 1``: at most ``min(nthreads, number of processors)`` threads
+  are used;
+- a negative value (e.g. ``-1``): automatic, ``min(number of processors,
+  2 * cpu_count())`` threads.
+
+Since the reading is mostly I/O bound and relies on NumPy for the parsing,
+the speed-up is significant for binary and gzipped cases, where the Global
+Interpreter Lock (GIL) is released during file reads and buffer conversions.
+For pure ASCII cases the gain is smaller because the parsing itself holds
+the GIL.
+
+Logging
+-------
+
+Progress and warning messages are emitted through the standard ``logging``
+module, under the ``fluidfoam.readof`` logger. Nothing is printed by
+default; to see the messages, configure logging in your script::
+
+    import logging
+    logging.basicConfig(level=logging.INFO)
+
+The ``verbose`` keyword of the reading functions remains the simple
+on/off switch (``verbose=False`` disables the messages).
+
+Errors
+------
+
+A missing boundary/patch raises a ``ValueError`` (no longer calls
+``sys.exit``), so the error can be caught and handled by the caller.
+
+Precision of the read values
+----------------------------
+
+All read values are rounded to ``precision`` decimals (15 by default)
+with ``np.around``. For binary cases this may seem surprising, but it is
+intentional and needed for structured meshes: blockMesh sometimes shifts
+mesh points by tiny arbitrary amounts, so exact coordinates would break
+the detection of the structured grid (and the ``np.reshape`` of
+``structured=True``). The rounding also cleans up the small errors of the
+ascii decimal representation. Keep this in mind if you need more than 15
+decimals: pass a larger ``precision`` to the reading functions.
 
 """
 
@@ -33,6 +89,7 @@ import re
 import gzip
 import struct
 import sys
+import logging
 import inspect
 import tempfile
 import functools
@@ -59,19 +116,15 @@ def set_nthreads(nthreads):
 
 def _effective_nthreads(nprocs):
     """Number of threads actually used to read nprocs processor directories."""
-    if NTHREADS <= 1 or nprocs <= 1:
+    if nprocs <= 1 or NTHREADS in (0, 1):
         return 1
     if NTHREADS < 0:  # -1 (or any negative): automatic
         return min(nprocs, (os.cpu_count() or 1) * 2)
     return min(nprocs, NTHREADS)
 
-# define color
-W = "\033[0m"  # white (normal)
-R = "\033[31m"  # red
-G = "\033[32m"  # green
-O = "\033[33m"  # orange
-B = "\033[34m"  # blue
-P = "\033[35m"  # purple
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 def _make_path(path, time_name=None, name=None):
@@ -95,7 +148,7 @@ def _find_latesttime(path):
         try:
             float(directory)
             time_list.append(directory)
-        except:
+        except ValueError:
             pass
     time_list.sort(key=float)
     return time_list[-1]
@@ -262,7 +315,9 @@ def _extract_collated(dirs, tmp, required, optional=()):
                     continue
                 blocks = _read_collated_blocks(filename)
                 # only the first block carries the FoamFile header
-                h = re.match(rb"\s*FoamFile\s*\{.*?\}\n", blocks[min(blocks)], re.S)
+                h = re.match(
+                    rb"\s*FoamFile\s*\{.*?\}\n", blocks[min(blocks)], re.S
+                )
                 header = h.group(0) if h else b""
                 for rank, block in blocks.items():
                     if not block.lstrip().startswith(b"FoamFile"):
@@ -293,13 +348,11 @@ def _use_processors(path, time_name, name, kind):
     if time_name == "latestTime":
         t_dec = _latest_time_or_none(dirs[0])
         t_root = _latest_time_or_none(path)
-        if t_dec is not None and (
-            t_root is None or float(t_dec) > float(t_root)
-        ):
+        if t_dec is not None and (t_root is None or float(t_dec) > float(t_root)):
             return layout, t_dec
         return None, time_name
 
-    if kind == "mesh":
+    if kind in ("mesh", "volumes"):
         if not os.path.exists(os.path.join(path, "constant", "polyMesh")):
             return layout, time_name
         if (
@@ -356,7 +409,9 @@ def _reconstruct(func, kind, args, time_name, data_path, layout):
     order = args.get("order", "F")
     verbose = args.get("verbose", True)
     if verbose:
-        print("Reading %s decomposed case (%d processors)" % (layout, len(procs)))
+        logger.info(
+            "Reading %s decomposed case (%d processors)", layout, len(procs)
+        )
 
     sub = dict(args)
     sub.update(structured=False, verbose=False, time_name=time_name)
@@ -382,6 +437,21 @@ def _reconstruct(func, kind, args, time_name, data_path, layout):
     ncells = sum(addr.size for addr, _ in parts)
     if max(addr.max() for addr, _ in parts) + 1 != ncells:
         raise ValueError("Inconsistent cellProcAddressing in " + path)
+
+    if kind == "volumes":
+        # func returned (centroids, volumes) per processor: scatter both
+        centroids = np.empty((ncells, 3), dtype=float)
+        volumes = np.empty(ncells, dtype=float)
+        for addr, (cent, vol) in parts:
+            if cent.shape[0] != addr.size or vol.shape[0] != addr.size:
+                raise ValueError(
+                    "getVolumes on a decomposed case requires all the "
+                    "cells of each processor (box=None)."
+                )
+            centroids[addr] = cent
+            volumes[addr] = vol
+        return centroids, volumes
+
     values = _scatter_to_global(parts, ncells)
 
     if kind == "mesh":
@@ -429,13 +499,13 @@ def _reconstruct_boundary(func, kind, args, time_name, data_path, layout):
     structured = args.get("structured", False)
     order = args.get("order", "F")
     if args.get("verbose", True):
-        print("Reading %s decomposed case (%d processors)" % (layout, len(procs)))
+        logger.info(
+            "Reading %s decomposed case (%d processors)", layout, len(procs)
+        )
 
     sub = dict(args)
     sub.update(structured=False, verbose=False, time_name=time_name)
-    ranges = {
-        procdir: _patch_range(procdir, patch) for procdir in procs
-    }
+    ranges = {procdir: _patch_range(procdir, patch) for procdir in procs}
     active = [
         procdir
         for procdir in procs
@@ -506,6 +576,17 @@ def _read_decomposed(func, kind, args, time_name, layout):
             raise NotImplementedError(
                 "Option '%s' is not supported for decomposed cases "
                 "(reconstruct the case with reconstructPar)." % key
+            )
+    if kind == "volumes":
+        if args.get("box") is not None:
+            raise NotImplementedError(
+                "Option 'box' is not supported for decomposed cases "
+                "(reconstruct the case with reconstructPar)."
+            )
+        if args.get("structured"):
+            raise NotImplementedError(
+                "Option 'structured' is not supported for decomposed cases "
+                "(reconstruct the case with reconstructPar)."
             )
     on_patch = args.get("boundary") is not None
     reconstruct = _reconstruct_boundary if on_patch else _reconstruct
@@ -620,7 +701,7 @@ class OpenFoamFile(object):
             self.path = _make_path(path, time_name, os.path.join(sets, name))
         self.verbose = verbose
         if self.verbose:
-            print("Reading file " + self.path)
+            logger.info("Reading file %s", self.path)
 
         if not os.path.exists(self.path) and os.path.exists(self.path + ".gz"):
             self.path += ".gz"
@@ -655,7 +736,9 @@ class OpenFoamFile(object):
 
         for line in _iter_dimensions_lines(self.content):
             tmp = (line.split(b"[")[1]).split(b"]")[0]
-            self.dimensions = eval(b", ".join(tmp.split()))
+            self.dimensions = tuple(
+                int(s) for s in tmp.replace(b"-", b" -").split()
+            )
 
         if name is None:
             self._parse_data(
@@ -756,6 +839,13 @@ class OpenFoamFile(object):
             if line == title:
                 in_section = True
                 continue
+            if line.startswith(title + b" ") and b"{" in line:
+                # compact one-line header, e.g. "FoamFile { version 2.0; ... }"
+                in_section = True
+                fields = line.replace(b"{", b" ").replace(b"}", b" ").split()
+                for i in range(1, len(fields) - 1, 2):
+                    dict_session[fields[i]] = fields[i + 1]
+                break
             if in_section is True:
                 if line == b"{":
                     level += 1
@@ -782,8 +872,6 @@ class OpenFoamFile(object):
 
     def _parse_data(self, boundary, datatype, precision=15):
 
-        import sys
-
         if boundary is not None:
             boun = str.encode(boundary)
             if np.size(self.content.split(boun)) <= 2:
@@ -798,15 +886,18 @@ class OpenFoamFile(object):
                         break
 
             if iboun >= np.size(self.content.split(boun)):
-                print(R + "Error : No boundary/patch " + str(boun) + W)
-                sys.exit(1)
+                raise ValueError(
+                    "No boundary/patch " + boundary + " in " + self.path
+                )
 
             elif b"value" in self.content.split(boun)[iboun].split(b"}")[0]:
                 data = self.content.split(boun)[iboun].split(b"value")[1]
             else:
                 if self.verbose:
-                    print(R + "Warning : No data on boundary/patch")
-                    print("Using the values of the nearest cells" + W)
+                    logger.warning(
+                        "No data on boundary/patch; "
+                        "using the values of the nearest cells"
+                    )
                 self._nearest_data(boundary=boundary, precision=precision)
                 return
         else:
@@ -815,9 +906,21 @@ class OpenFoamFile(object):
             except IndexError:
                 data = self.content
 
+        self._parse_field_values(data, datatype=datatype)
+
+    def _parse_field_values(self, data, datatype=None, precision=15):
+        """Parse the values of a field (uniform or not, ascii or binary).
+
+        Set self.nonuniform, self.uniform, self.codestream, self.short,
+        self.type_data and self.values; return nothing.
+
+        """
         lines = data.split(b"\n")
         shortline = lines[0].split(b">")[-1]
         words = lines[0].split()
+        if not shortline and len(lines) > 1:
+            # e.g. "nonuniform List<vector>" alone on the first line
+            shortline = lines[1].split(b">")[-1]
 
         if not self.noheader:
             self.nonuniform = words[0] == b"nonuniform"
@@ -852,13 +955,10 @@ class OpenFoamFile(object):
             else:
                 data = words[1].split(b";")[0]
             if self.verbose:
-                print(
-                    R
-                    + "Warning : uniform field  of type "
-                    + self.type_data
-                    + "!\n"
+                logger.warning(
+                    "uniform field of type %s! " "Only constant field in output",
+                    self.type_data,
                 )
-                print("Only constant field in output\n" + W)
         elif shortline.count(b";") >= 1:
             nb_pts = int(shortline.split(b"(")[0])
             data = shortline.split(b"(")[1]
@@ -867,11 +967,8 @@ class OpenFoamFile(object):
         elif self.codestream:
             nb_pts = 0
             if self.verbose:
-                print(
-                    R
-                    + "Warning : codeStream field! "
-                    + "I can not read the source code!\n"
-                    + W
+                logger.warning(
+                    "codeStream field! I can not read the source code!"
                 )
         else:
             nb_pts = int(lines[1])
@@ -887,21 +984,19 @@ class OpenFoamFile(object):
             elif self.type_data == "tensor":
                 nb_numbers = 9 * nb_pts
             if self.is_SP:
-                self.values = np.frombuffer(
-                    data,
-                    dtype=np.dtype(">f4" if self.is_MSB else "<f4"),
-                    count=nb_numbers,
-                ).astype(np.float64)
+                dtype = np.dtype(">f4" if self.is_MSB else "<f4")
             else:
-                self.values = np.frombuffer(
-                    data,
-                    dtype=np.dtype(">f8" if self.is_MSB else "<f8"),
-                    count=nb_numbers,
-                ).astype(np.float64)
+                dtype = np.dtype(">f8" if self.is_MSB else "<f8")
+            self.values = np.frombuffer(
+                data, dtype=dtype, count=nb_numbers
+            ).astype(np.float64, copy=True)
         else:
             if self.type_data == "scalar":
                 self.values = np.array(
-                    [float(s) for s in data.strip().split(b"\n")[:nb_pts]]
+                    [
+                        float(s.replace(b")", b"").replace(b";", b""))
+                        for s in data.strip().split(b"\n")[:nb_pts]
+                    ]
                 )
             elif self.type_data in ("vector", "tensor", "symmtensor"):
                 lines = data.split(b";")[0].split(b"\n(")
@@ -934,89 +1029,8 @@ class OpenFoamFile(object):
             cell[i] = ownerfile.values[id0 + i]
         data = self.content.split(b"internalField")[1]
 
-        lines = data.split(b"\n")
-        shortline = lines[0].split(b">")[-1]
-        words = lines[0].split()
-
-        self.nonuniform = words[0] == b"nonuniform"
-        self.uniform = words[0] == b"uniform"
-        self.codestream = words[0] == b"#codeStream"
-        self.short = shortline[-1] == b";"
-
-        self.type_data = self.header[b"class"]
-
-        if b"ScalarField" in self.type_data:
-            self.type_data = "scalar"
-        elif b"VectorField" in self.type_data:
-            self.type_data = "vector"
-        elif b"SymmTensorField" in self.type_data:
-            self.type_data = "symmtensor"
-        elif b"TensorField" in self.type_data:
-            self.type_data = "tensor"
-
-        if self.uniform:
-            nb_pts = 1
-            if not (self.type_data == "scalar"):
-                data = shortline.split(b"(")[1]
-                data = data.replace(b" ", b"\n")
-                data = data.replace(b");", b"\n);")
-            else:
-                data = words[1].split(b";")[0]
-            if self.verbose:
-                print(
-                    R
-                    + "Warning : uniform field  of type "
-                    + self.type_data
-                    + "!\n"
-                )
-                print("Only constant field in output\n" + W)
-        elif shortline.count(b";") >= 1:
-            nb_pts = int(shortline.split(b"(")[0])
-            data = shortline.split(b"(")[1]
-            data = data.replace(b" ", b"\n")
-            data = data.replace(b");", b"\n);")
-        elif self.codestream:
-            nb_pts = 0
-            if self.verbose:
-                print(
-                    R
-                    + "Warning : codeStream field! "
-                    + "I can not read the source code!\n"
-                    + W
-                )
-        else:
-            nb_pts = int(lines[1])
-            data = b"\n(".join(data.split(b"\n(")[1:])
-
-        if not self.is_ascii and not self.uniform:
-            if self.type_data == "scalar":
-                nb_numbers = nb_pts
-            elif self.type_data == "vector":
-                nb_numbers = 3 * nb_pts
-            elif self.type_data == "symmtensor":
-                nb_numbers = 6 * nb_pts
-            elif self.type_data == "tensor":
-                nb_numbers = 9 * nb_pts
-            if self.is_SP:
-                dtype = np.dtype(">f4" if self.is_MSB else "<f4")
-                nb_bytes = nb_numbers * dtype.itemsize
-            else:
-                dtype = np.dtype(">f8" if self.is_MSB else "<f8")
-                nb_bytes = nb_numbers * dtype.itemsize
-            values = np.frombuffer(
-                data[:nb_bytes], dtype=dtype, count=nb_numbers
-            ).astype(np.float64, copy=True)
-        else:
-            if self.type_data == "scalar":
-                values = np.array(
-                    [float(s) for s in data.strip().split(b"\n")[:nb_pts]]
-                )
-            elif self.type_data in ("vector", "tensor", "symmtensor"):
-                lines = data.split(b"\n(")
-                lines = [line.split(b")")[0] for line in lines]
-                data = b" ".join(lines).strip()
-                values = np.array([float(s) for s in data.split()])
-        values = np.around(values, decimals=precision)
+        self._parse_field_values(data, precision=precision)
+        values = self.values
         if self.uniform:
             self.values = values
         else:
@@ -1028,12 +1042,7 @@ class OpenFoamFile(object):
                 nv = 6
             elif self.type_data == "tensor":
                 nv = 9
-            valuesbou = np.empty(nv * nfaces, dtype=float)
-            for i in range(nfaces):
-                valuesbou[i * nv : (i + 1) * nv] = values[
-                    nv * cell[i] : nv * (cell[i] + 1)
-                ]
-            self.values = valuesbou
+            self.values = values.reshape(-1, nv)[cell].reshape(-1)
         if self.type_data == "vector":
             self.values_x = self.values[::3]
             self.values_y = self.values[1::3]
@@ -1094,7 +1103,9 @@ class OpenFoamFile(object):
                     parts = line.split(b"(")
                     self.faces[i - 1] = {
                         "npts": int(parts[0]),
-                        "id_pts": [int(s) for s in parts[1].split(b")")[0].split()],
+                        "id_pts": [
+                            int(s) for s in parts[1].split(b")")[0].split()
+                        ],
                     }
 
     def _parse_points(self, precision):
@@ -1482,7 +1493,7 @@ def readvector(
     values = np.reshape(values, shape, order=order)
     if structured:
         if vector.uniform and verbose:
-            print("internalfield is uniform; so no reshape possible...")
+            logger.warning("internalfield is uniform; so no reshape possible...")
         else:
             values[0:3, :] = values[0:3, vector.ind]
             shape = (3,) + tuple(vector.shape)
@@ -1552,7 +1563,7 @@ def readsymmtensor(
     values = np.reshape(values, shape, order=order)
     if structured:
         if scalar.uniform and verbose:
-            print("internalfield is uniform; so no reshape possible...")
+            logger.warning("internalfield is uniform; so no reshape possible...")
         else:
             values[0:6, :] = values[0:6, scalar.ind]
             shape = (6,) + tuple(scalar.shape)
@@ -1623,7 +1634,7 @@ def readtensor(
     values = np.reshape(values, shape, order=order)
     if structured:
         if scalar.uniform and verbose:
-            print("internalfield is uniform; so no reshape possible...")
+            logger.warning("internalfield is uniform; so no reshape possible...")
         else:
             values[0:9, :] = values[0:9, scalar.ind]
             shape = (9,) + tuple(scalar.shape)
@@ -1820,6 +1831,7 @@ def readmesh(
     return xs, ys, zs
 
 
+@_decomposed_fallback("volumes")
 def getVolumes(
     path,
     time_name=None,

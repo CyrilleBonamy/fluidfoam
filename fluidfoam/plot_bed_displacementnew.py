@@ -55,7 +55,9 @@ import matplotlib
 matplotlib.use("Agg")  # no display needed (cluster, ssh...)
 import matplotlib.pyplot as plt
 from matplotlib.tri import Triangulation
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 (registers the 3d projection)
+from mpl_toolkits.mplot3d import (
+    Axes3D,
+)  # noqa: F401 (registers the 3d projection)
 
 from fluidfoam import (
     readmesh,
@@ -119,9 +121,7 @@ def patch_centres(case, patch, time=None):
 
     time=None: initial mesh (constant/polyMesh).
     """
-    return np.array(
-        readmesh(case, time_name=time, boundary=patch, verbose=False)
-    )
+    return np.array(readmesh(case, time_name=time, boundary=patch, verbose=False))
 
 
 def read_patch_field(case, time, field, patch, n_faces):
@@ -216,7 +216,9 @@ def color_settings(values, component, vmin, vmax, cmap):
 def make_triangulation(u, v, max_edge=None):
     triangulation = Triangulation(u, v)
     if max_edge is not None:  # remove the triangles bridging a hole
-        corners = np.stack([u[triangulation.triangles], v[triangulation.triangles]])
+        corners = np.stack(
+            [u[triangulation.triangles], v[triangulation.triangles]]
+        )
         edges = np.linalg.norm(corners - np.roll(corners, 1, axis=2), axis=0)
         triangulation.set_mask(edges.max(axis=1) > max_edge)
     return triangulation
@@ -239,7 +241,9 @@ def plot_2d(positions, values, title, label, plane, output, limits, max_edge):
     plt.close(fig)
 
 
-def plot_3d(positions, values, title, label, plane, output, limits, max_edge, elev, azim):
+def plot_3d(
+    positions, values, title, label, plane, output, limits, max_edge, elev, azim
+):
     cmap, vmin, vmax = limits
     u, v = positions[list(PLANES[plane])]
     triangles = make_triangulation(u, v, max_edge).get_masked_triangles()
@@ -289,8 +293,18 @@ def main():
         "(tensor)",
     )
     parser.add_argument("--view", default="2d", choices=("2d", "3d"))
-    parser.add_argument("--elev", type=float, default=30.0, help="3d: elevation of the view (degrees)")
-    parser.add_argument("--azim", type=float, default=-60.0, help="3d: azimuth of the view (degrees)")
+    parser.add_argument(
+        "--elev",
+        type=float,
+        default=30.0,
+        help="3d: elevation of the view (degrees)",
+    )
+    parser.add_argument(
+        "--azim",
+        type=float,
+        default=-60.0,
+        help="3d: azimuth of the view (degrees)",
+    )
     parser.add_argument(
         "--scale",
         type=float,
@@ -325,9 +339,20 @@ def main():
     title = "%s on patch %s, t = %s" % (label, args.patch, time)
     if args.scale != 1:
         title += " (displacement x%g)" % args.scale
-    limits = color_settings(scalar, args.component, args.vmin, args.vmax, args.cmap)
+    limits = color_settings(
+        scalar, args.component, args.vmin, args.vmax, args.cmap
+    )
     if args.view == "2d":
-        plot_2d(positions, scalar, title, label, args.plane, args.output, limits, args.max_edge)
+        plot_2d(
+            positions,
+            scalar,
+            title,
+            label,
+            args.plane,
+            args.output,
+            limits,
+            args.max_edge,
+        )
     else:
         plot_3d(
             positions, scalar, title, label, args.plane, args.output, limits,

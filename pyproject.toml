@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 packages = ["fluidfoam"]
 [project]
 name = "fluidfoam"
-version = "0.3.1"
+version = "0.4.0"
 license = "GPL-3.0-or-later"
 license-files = [ "LICENSE" ]
 keywords = ["Openfoam", "postprocessing", "python", "CFD"]
@@ -14,7 +14,7 @@ authors = [
 ]
 description = "Efficient Python library to read, analyze, and visualize OpenFOAM simulation data (ASCII/binary, decomposed cases) — fast, flexible, and publication-ready."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.11",
     "matplotlib>=1.5",

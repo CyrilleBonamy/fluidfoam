@@ -116,9 +116,7 @@ def readforce(path, namepatch="forces", time_name="0", name="forces"):
     return values.reshape(len(rows), ncols)
 
 
-def readprobes(
-    path, probes_name="probes", time_name="0", name="U", verbose=True
-):
+def readprobes(path, probes_name="probes", time_name="0", name="U", verbose=True):
     """read the data contained in the probes file.
 
     Args:
