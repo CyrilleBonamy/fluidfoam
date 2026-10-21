@@ -134,23 +134,23 @@ Example Usage
 Core Developers
 ---------------
 
-* Cyrille.Bonamy@univ-grenoble-alpes.fr
+* Cyrille.Bonamy@cnrs.fr
 
 Other Contributors
 ------------------
 
 * Julien.Chauchat@univ-grenoble-alpes.fr
-* amathieu@udel.edu
+* antoine.mathieu@edf.fr
 * Remi.Chassagne@univ-grenoble-alpes.fr
 * Quentin.Clemencot@univ-grenoble-alpes.fr
 * Matthias.Renaud@univ-grenoble-alpes.fr
-* Alban.Gilletta.De.Saint.Joseph@france-energies-marines.org
+* Alban.Gilletta-de-saint-joseph@univ-grenoble-alpes.fr
 * Gabriel Goncalves
 
 Emeritus Core Developers
 ------------------------
 
-* Pierre.Augier@legi.cnrs.fr
+* Pierre.Augier@cnrs.fr
 
 Emeritus Developers
 -------------------
