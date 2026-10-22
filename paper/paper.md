@@ -12,20 +12,28 @@ authors:
     orcid: '0000-0003-3868-7090'
   - name: 'Julien Chauchat'
     affiliation: 2
+    orcid: '0000-0002-5979-0620'
   - name: 'Quentin Clemencot'
     affiliation: 3
+  - name: 'Eduard Puig Montellà'
+    affiliation: 4
+    orcid: '0000-0001-7184-0945'
   - name: 'Rémi Chassagne'
     affiliation: 1
+    orcid: '0000-0002-6448-7909'
 affiliations:
   - index: 1
     name: Université Grenoble Alpes, CNRS, LEGI, Grenoble, France
     ror: '02rx3b187'
   - index: 2
-    name: Université Grenoble Alpes, INRAE, CNRS, IGE, Grenoble, France
+    name: Université Grenoble Alpes, INRAE, IRD, CNRS, IGE, Grenoble, France
     ror: '02rx3b187'
   - index: 3
     name: Alstom, France
     ror: '00t4db855'
+  - index: 4
+    name: Centro Oceanográfico de Canarias, Instituto Español de Oceanografía,Consejo Superior de Investigaciones Científicas (IEO-CSIC), Santa Cruz de Tenerife, Spain 
+    ror: '0580ctc67'
 date: '1 November 2026'
 bibliography: paper.bib
 ---
