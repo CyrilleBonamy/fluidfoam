@@ -12,14 +12,20 @@ authors:
     orcid: '0000-0003-3868-7090'
   - name: 'Julien Chauchat'
     affiliation: 2
+  - name: 'Quentin Clemencot'
+    affiliation: 3
+  - name: 'Rémi Chassagne'
+    affiliation: 1
 affiliations:
   - index: 1
     name: Université Grenoble Alpes, CNRS, LEGI, Grenoble, France
-    # TODO: check whether LEGI and IGE share the same ROR (institution-level) or each has its own
-    ror: 'https://ror.org/02rx3b187'
+    ror: '02rx3b187'
   - index: 2
     name: Université Grenoble Alpes, INRAE, CNRS, IGE, Grenoble, France
-    ror: 'https://ror.org/02rx3b187'
+    ror: '02rx3b187'
+  - index: 3
+    name: Alstom, France
+    ror: '00t4db855'
 date: '1 November 2026'
 bibliography: paper.bib
 ---
@@ -68,13 +74,12 @@ modest and to hide the bookkeeping of parallel layouts from the user.
 Several Python tools address OpenFOAM data, with different emphases. PyFoam
 [@gschaider2023] focuses on case configuration and running rather than
 analytical post-processing. Ofpp [@xianghua2023] is a minimal reader that
-appears to be no longer actively maintained
-<!-- TODO: verify (date of last commit/release) before submission -->.
+appears to be no longer actively maintained (no commit since August 2023).
 fluidsimfoam [@augier2025] sets up and runs simulations within the fluidsim
 framework, relying on HDF5 output rather than native OpenFOAM files. foamlib
 [@gerlero2025] is a comprehensive, fully type-hinted library for interacting
 with OpenFOAM files and running cases, including asynchronous and Slurm-based
-execution. Turbulucid [@mukha2018] provides scripted post-processing and
+execution. Turbulucid [@mukha2019] provides scripted post-processing and
 plotting of plane 2D simulations based on VTK. Generic readers such as the
 OpenFOAM reader of ParaView, accessible from Python through PyVista
 [@sullivan2019], give access to cases through the VTK data model. A different
@@ -90,9 +95,6 @@ parallel cases directly into global, ordered fields; (ii) automatic reshaping of
 structured meshes into multi-dimensional arrays; and (iii) a minimal
 dependency footprint (NumPy and SciPy only), which matters for shared
 analysis scripts, teaching, and continuous integration.
-<!-- TODO: verify these three points against the current release of foamlib
-(binary/parallel support) and, ideally, replace this paragraph by a short
-comparison table. -->
 These tools are largely complementary: a workflow may use foamlib or
 fluidsimfoam to launch simulations and fluidfoam to analyse their output.
 
@@ -135,8 +137,6 @@ reading time of large binary fields is dominated by file input rather than
 decoding, which motivated optional multi-threaded reading of decomposed
 cases (bit-exact results), and yields practical guidance: write results in
 binary format and load each time series once.
-<!-- TODO: re-run the benchmark with cold caches and compare fluidfoam and
-foamlib arrays directly before submission. -->
 
 # Research impact statement
 
@@ -146,15 +146,12 @@ used in morphodynamics research. It has been used in the post-processing of simu
 unsteady effects in oscillatory sheet flows [@mathieu2022], finite-size
 effects in two-fluid large-eddy simulation of particle-laden boundary layers
 [@mathieu2021], a frictional–collisional model for bedload transport
-[@chassagne2023] and the three-phase solver sedInterFoam [@mathieu2025]
-<!-- TODO: add the 6 remaining publications of the team (DOIs:
-10.1016/j.ijmultiphaseflow.2025.105457, 10.1029/2025JC022461,
-10.1016/j.advwatres.2025.104934, 10.51560/ofj.v4.119, 10.1017/flo.2023.23,
-10.1017/jfm.2021.666), once their metadata is available. -->.
+[@chassagne2023], the three-phase solver sedInterFoam [@mathieu2025], an
+Exner diagnosis method for two-fluid morphodynamics simulations
+[@gilletta2026], and the Exner-based morphodynamics model sedExnerFoam
+[@renaud2026].
 It is also the interface for reading OpenFOAM output in the
-SedFoam tutorials [@sedfoamdoc] and in machine-learning datasets built from
-OpenFOAM simulations
-<!-- TODO: add reference/link for the ML dataset(s). -->.
+SedFoam tutorials [@sedfoamdoc].
 
 Beyond its developers' group, the package is distributed on PyPI and
 conda-forge. As of 22 October 2026, it totals over 125,000 downloads from PyPI
@@ -180,7 +177,7 @@ reproducible materials for new users.
 
 In accordance with the JOSS AI usage policy, we disclose the following use
 of generative AI. Two assistants were used: the Mistral AI "Vibe Code" agent
-(model zai-glm-5-3 <!-- TODO: check exact model name -->) and Anthropic's
+(model zai-glm-5-3) and Anthropic's
 Claude (model Claude Sonnet 5.5).
 
 - *Paper text:* drafting and copy-editing of sections of this manuscript
