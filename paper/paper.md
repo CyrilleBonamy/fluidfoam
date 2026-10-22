@@ -41,7 +41,8 @@ bibliography: paper.bib
 # Summary
 
 Computational fluid dynamics (CFD) researchers often use OpenFOAM
-[@openfoam], an open-source toolbox, to simulate flows such as
+[@openfoam; @opencfd], an open-source toolbox distributed by two
+organisations sharing a common file format, to simulate flows such as
 turbulent currents, sediment transport in rivers, or erosion around marine
 structures. Each simulation produces large output files in OpenFOAM's own
 file format, which must then be analysed to compute statistics, plot
@@ -121,11 +122,12 @@ illustrations.
 
 Three further design choices structure the core. First, it is a standalone
 reader: it does not wrap OpenFOAM commands and does not link to the
-OpenFOAM C++ API. This removes any dependence on a particular OpenFOAM
-version or distribution, at the cost of maintaining a parser for the
-OpenFOAM file format — a cost kept low because the format is stable and
-because the parser handles ASCII, binary (either byte order, taken from the
-FoamFile header), and gzip-compressed files uniformly.
+OpenFOAM C++ API. It reads the file format shared by the two OpenFOAM
+distributions (the OpenFOAM Foundation and OpenCFD), which removes any
+dependence on a particular version or distribution, at the cost of
+maintaining a parser for the OpenFOAM file format — a cost kept low because
+the format is stable and because the parser handles ASCII, binary (either byte
+order, taken from the FoamFile header), and gzip-compressed files uniformly.
 
 Second, decomposed parallel cases (uncollated and collated layouts) are
 reconstructed transparently using the cell, face, and boundary addressing
