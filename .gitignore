@@ -7,3 +7,4 @@ fluidfoam.egg-info
 .coverage
 _build
 generated
+bench/data
