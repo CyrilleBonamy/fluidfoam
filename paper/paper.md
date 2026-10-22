@@ -42,7 +42,7 @@ bibliography: paper.bib
 
 Computational fluid dynamics (CFD) researchers, engineers, and students
 often use OpenFOAM [@openfoam; @opencfd], an open-source toolbox used
-across a very wide range of applications — aerodynamics, heat transfer,
+across a very wide range of applications - aerodynamics, heat transfer,
 combustion, chemical engineering, and environmental flows alike.
 Each simulation produces large output files in OpenFOAM's own
 file format, which must then be analysed to compute statistics, plot
@@ -117,7 +117,7 @@ loads, in one step, all fields saved at a given time step of a simulation
 (or of any simulation found in a directory tree), which is the typical entry
 point for exploratory analysis; and specialised modules handle
 postProcessing function-object output, mesh design and visualisation for
-simple configurations — including the generation of vector figures (SVG,
+simple configurations - including the generation of vector figures (SVG,
 PDF) of 2D meshes via Matplotlib [@hunter2007] line collections, for
 publication-quality mesh illustrations. A dedicated module also closes the
 loop between one-dimensional and multi-dimensional simulations: it extracts
@@ -134,15 +134,15 @@ reader: it does not wrap OpenFOAM commands and does not link to the
 OpenFOAM C++ API. It reads the file format shared by the two OpenFOAM
 distributions (the OpenFOAM Foundation and OpenCFD), which removes any
 dependence on a particular version or distribution, at the cost of
-maintaining a parser for the OpenFOAM file format — a cost kept low because
+maintaining a parser for the OpenFOAM file format - a cost kept low because
 the format is stable and because the parser handles ASCII, binary (either byte
 order, taken from the FoamFile header), and gzip-compressed files uniformly.
 
 A related, deliberate goal was to keep the code small and readable. The
 reading core is a single module of about 1,800 lines of plain Python, and
 the whole package fits in roughly 3,000 lines without metaprogramming,
-type machinery, or asynchronous constructs. Graduate students — a large
-share of the user base — can read the parser in an afternoon, adapt it to
+type machinery, or asynchronous constructs. Graduate students - a large
+share of the user base - can read the parser in an afternoon, adapt it to
 their particular output layout, or extend it; we consider this hackability
 a feature for research code, at the cost of the ergonomics that larger
 frameworks provide.
@@ -219,9 +219,9 @@ Claude (model Claude Sonnet 5.5).
 - *Benchmark code:* generation of the comparative benchmark scripts and of
   synthetic OpenFOAM-format test datasets, with iterative debugging against
   real OpenFOAM output files.
-- *Software:* the most recent changes to the fluidfoam codebase —
+- *Software:* the most recent changes to the fluidfoam codebase -
   essentially the transparent support of decomposed cases and the optional
-  multi-threaded reading — were made with AI assistance.
+  multi-threaded reading - were made with AI assistance.
 - *Documentation:* restructuring of the benchmark documentation.
 
 AI was not used for interactions with editors or reviewers. The human
