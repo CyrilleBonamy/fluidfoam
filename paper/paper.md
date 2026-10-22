@@ -40,13 +40,15 @@ bibliography: paper.bib
 
 # Summary
 
-Computational fluid dynamics (CFD) researchers often use OpenFOAM
-[@openfoam; @opencfd], an open-source toolbox distributed by two
-organisations sharing a common file format, to simulate flows such as
-turbulent currents, sediment transport in rivers, or erosion around marine
-structures. Each simulation produces large output files in OpenFOAM's own
+Computational fluid dynamics (CFD) researchers, engineers, and students
+often use OpenFOAM [@openfoam; @opencfd], an open-source toolbox used
+across a very wide range of applications — aerodynamics, heat transfer,
+combustion, chemical engineering, and environmental flows alike.
+Each simulation produces large output files in OpenFOAM's own
 file format, which must then be analysed to compute statistics, plot
-profiles, or compare with experiments. fluidfoam is a Python package that
+profiles, or compare with experiments.
+
+fluidfoam is a Python package that
 reads these output files directly, converting meshes and flow fields into
 NumPy arrays [@harris2020], the standard array format of the scientific
 Python ecosystem, in a single function call. It requires neither an OpenFOAM
@@ -54,10 +56,10 @@ installation nor conversion to intermediate formats, and runs on a laptop
 analysing data copied from a supercomputer. Results from parallel
 simulations, which are split across multiple directories, are reassembled
 transparently. Beyond reading, fluidfoam processes the outputs of OpenFOAM
-function objects (forces, probes), writes and reads 1D profiles for
-boundary-condition imposition via swak4Foam [@swak4foam], and generates mesh
-dictionaries for simple configurations. The package is pure Python, depends
-only on NumPy and SciPy [@virtanen2020], and is released under GPL-3.0.
+function objects (forces, probes) and writes and reads 1D profiles for
+boundary-condition imposition via swak4Foam [@swak4foam]. The package is
+pure Python, depends only on NumPy and SciPy [@virtanen2020], and is
+released under GPL-3.0.
 
 # Statement of need
 
@@ -125,7 +127,9 @@ boundary or initial conditions on a 2D/3D case. This 1D-to-3D workflow,
 classically used to initialise SedFoam studies (see the SedFoam tutorials
 [@sedfoamdoc]), turns a costly 3D spin-up into a cheap 1D computation.
 
-Three further design choices structure the core. First, it is a standalone
+Three further design choices structure the core.
+
+First, it is a standalone
 reader: it does not wrap OpenFOAM commands and does not link to the
 OpenFOAM C++ API. It reads the file format shared by the two OpenFOAM
 distributions (the OpenFOAM Foundation and OpenCFD), which removes any
@@ -134,12 +138,23 @@ maintaining a parser for the OpenFOAM file format — a cost kept low because
 the format is stable and because the parser handles ASCII, binary (either byte
 order, taken from the FoamFile header), and gzip-compressed files uniformly.
 
+A related, deliberate goal was to keep the code small and readable. The
+reading core is a single module of about 1,800 lines of plain Python, and
+the whole package fits in roughly 3,000 lines without metaprogramming,
+type machinery, or asynchronous constructs. Graduate students — a large
+share of the user base — can read the parser in an afternoon, adapt it to
+their particular output layout, or extend it; we consider this hackability
+a feature for research code, at the cost of the ergonomics that larger
+frameworks provide.
+
 Second, decomposed parallel cases (uncollated and collated layouts) are
 reconstructed transparently using the cell, face, and boundary addressing
 files that OpenFOAM writes at decomposition time, so the same call returns
 identical arrays for reconstructed and decomposed data, and this
-reconstruction is shared by all layers. This correctness-critical path is
-validated in the test suite against reconstructed references.
+reconstruction is shared by all functionalities. Since a silent
+reconstruction error would be invisible in downstream results, the
+transparent reconstruction is validated in the test suite against
+reconstructed references.
 
 Third, a benchmark released with the package compares reading times with
 foamlib and PyFoam on fields of $10^6$ cells (warm file cache, one machine).
@@ -155,38 +170,42 @@ binary format and load each time series once.
 
 # Research impact statement
 
-fluidfoam has been developed since 2017 and is the post-processing layer
-of SedFoam [@chauchat2017], a two-phase-flow sediment-transport model
-used in morphodynamics research. It has been used in the post-processing of simulations for studies of
-unsteady effects in oscillatory sheet flows [@mathieu2022], finite-size
-effects in two-fluid large-eddy simulation of particle-laden boundary layers
-[@mathieu2021], a frictional–collisional model for bedload transport
-[@chassagne2023], the three-phase solver sedInterFoam [@mathieu2025], an
-Exner diagnosis method for two-fluid morphodynamics simulations
-[@gilletta2026], and the Exner-based morphodynamics model sedExnerFoam
-[@renaud2026].
-It is also the interface for reading OpenFOAM output in the
-SedFoam tutorials [@sedfoamdoc].
+fluidfoam has been developed since 2017, initially as the post-processing
+layer of SedFoam [@chauchat2017], a two-phase-flow sediment-transport model
+used in morphodynamics research. It has since enabled post-processing in a
+series of morphodynamics studies: the numerical investigation of unsteady
+effects in oscillatory sheet flows [@mathieu2022], finite-size effects in
+two-fluid large-eddy simulation of particle-laden boundary layers
+[@mathieu2021], and a frictional–collisional model for bedload transport
+[@chassagne2023]. Beyond these studies, it is the post-processing layer of
+the open-source solvers developed by the group: sedInterFoam, a three-phase
+model for free-surface sediment transport [@mathieu2025]; sedExnerFoam, an
+Exner-based morphodynamics model [@renaud2026]; and an Exner diagnosis
+method for two-fluid morphodynamics simulations [@gilletta2026]. It is
+also the interface for reading OpenFOAM output in the SedFoam tutorials
+[@sedfoamdoc].
 
 Beyond its developers' group, the package is distributed on PyPI and
-conda-forge. As of 22 October 2026, it totals over 125,000 downloads from PyPI
-since its first release, about 800 per month over the last month with mirrors
-excluded, and 376 downloads from conda-forge over the last six months.
-Its GitHub repository has 201 stars and 54 forks, and a Google Scholar
-full-text search finds it mentioned in 36 publications (after removing
-homonyms). Third-party uses include a tidal-flow monopile scour solver
-unrelated to SedFoam, in which fluidfoam reads the velocity and pressure
-fields at the end of each half tidal cycle to initialise the next one
-[@liu2024]; a machine-learning study of transient flow prediction around airfoils,
-where fluidfoam extracts the grid and the dynamic flow-field data from the
-numerical simulations [@xie2024]; the independent package openfoam-postprocessing [@martins2025]; and a series of
-independent tutorials on proper orthogonal decomposition of OpenFOAM snapshots
-[@goswami2024; @goswami2025], on function-object post-processing
-[@goswami2024fo] and on extracting and analysing OpenFOAM data
-[@goswami2024dive]. It is also listed in
-a survey of open-source CFD tools [@kodman2024].
-The Sphinx-Gallery example gallery and the benchmark datasets provide
-reproducible materials for new users.
+conda-forge. As of 22 October 2026, it totals over 125,000 downloads from
+PyPI since its first release, about 800 per month over the last month with
+mirrors excluded, and 376 downloads from conda-forge over the last six
+months. Its GitHub repository has 201 stars and 54 forks, and a Google
+Scholar full-text search finds it mentioned in 36 publications (after
+removing homonyms). Third-party uses include tidal-energy applications: a
+monopile scour solver under tidal flow, in which fluidfoam reads the
+velocity and pressure fields at the end of each half tidal cycle to
+initialise the next one [@liu2024], and an automated blade-design
+methodology for cross-flow tidal turbines, which post-processes
+simulations of 120 randomised blade shapes [@ruiz2025]; a machine-learning
+study of transient flow prediction around airfoils, where fluidfoam
+extracts the grid and the dynamic flow-field data from the numerical
+simulations [@xie2024]; the independent package openfoam-postprocessing
+[@martins2025]; and a series of independent tutorials on proper orthogonal
+decomposition of OpenFOAM snapshots [@goswami2024; @goswami2025], on
+function-object post-processing [@goswami2024fo] and on extracting and
+analysing OpenFOAM data [@goswami2024dive]. It is also listed in a survey
+of open-source CFD tools [@kodman2024]. The Sphinx-Gallery example gallery
+and the benchmark datasets provide reproducible materials for new users.
 
 # AI usage disclosure
 
