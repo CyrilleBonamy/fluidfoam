@@ -114,11 +114,16 @@ patches) form the low-level core; on top of them, an OpenFoamSimu class
 loads, in one step, all fields saved at a given time step of a simulation
 (or of any simulation found in a directory tree), which is the typical entry
 point for exploratory analysis; and specialised modules handle
-postProcessing function-object output, 1D profile generation for boundary
-conditions, and mesh design and visualisation for simple configurations —
-including the generation of vector figures (SVG, PDF) of 2D meshes via
-Matplotlib [@hunter2007] line collections, for publication-quality mesh
-illustrations.
+postProcessing function-object output, mesh design and visualisation for
+simple configurations — including the generation of vector figures (SVG,
+PDF) of 2D meshes via Matplotlib [@hunter2007] line collections, for
+publication-quality mesh illustrations. A dedicated module also closes the
+loop between one-dimensional and multi-dimensional simulations: it extracts
+vertical profiles of the flow fields from a 1D preliminary run and writes
+them in a format that swak4Foam [@swak4foam] can interpolate to impose
+boundary or initial conditions on a 2D/3D case. This 1D-to-3D workflow,
+classically used to initialise SedFoam studies (see the SedFoam tutorials
+[@sedfoamdoc]), turns a costly 3D spin-up into a cheap 1D computation.
 
 Three further design choices structure the core. First, it is a standalone
 reader: it does not wrap OpenFOAM commands and does not link to the
