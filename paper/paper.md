@@ -7,12 +7,15 @@ tags:
   - OpenFOAM
   - Python
 authors:
-  - name: Cyrille Bonamy
+  - name: 'Cyrille Bonamy'
     affiliation: 1
     orcid: '0000-0003-3868-7090'
   - name: 'Julien Chauchat'
     affiliation: 2
     orcid: '0000-0002-5979-0620'
+  - name: 'Pierre Augier'
+    affiliation: 1
+    orcid: '0000-0001-9481-4459'
   - name: 'Quentin Clemencot'
     affiliation: 3
   - name: 'Eduard Puig Montellà'
