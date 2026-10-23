@@ -10,9 +10,6 @@ authors:
   - name: 'Cyrille Bonamy'
     affiliation: 1
     orcid: '0000-0003-3868-7090'
-  - name: 'Julien Chauchat'
-    affiliation: 2
-    orcid: '0000-0002-5979-0620'
   - name: 'Pierre Augier'
     affiliation: 1
     orcid: '0000-0001-9481-4459'
@@ -24,6 +21,9 @@ authors:
   - name: 'Rémi Chassagne'
     affiliation: 1
     orcid: '0000-0002-6448-7909'
+  - name: 'Julien Chauchat'
+    affiliation: 2
+    orcid: '0000-0002-5979-0620'
 affiliations:
   - index: 1
     name: Université Grenoble Alpes, CNRS, LEGI, Grenoble, France
