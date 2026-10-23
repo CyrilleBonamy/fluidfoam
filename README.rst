@@ -141,6 +141,7 @@ Other Contributors
 
 * Julien.Chauchat@univ-grenoble-alpes.fr
 * antoine.mathieu@edf.fr
+* eduard.puig@ieo.csic.es
 * Remi.Chassagne@univ-grenoble-alpes.fr
 * Quentin.Clemencot@univ-grenoble-alpes.fr
 * Matthias.Renaud@univ-grenoble-alpes.fr
